@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Village",
+    "slug": "project-village",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.projectvillage.seed"
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}
