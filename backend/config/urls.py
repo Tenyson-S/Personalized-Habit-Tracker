@@ -13,4 +13,8 @@ urlpatterns = [
     path("api/", include("apps.sleep.urls")),
     path("api/", include("apps.progress.urls")),
     path("api/", include("apps.village.urls")),
+    path("api/", include("apps.chapters.urls")),
+    path("api/", include("apps.memories.urls")),
+    path("api/", include("apps.celebrations.urls")),
+    path("api/", include("apps.world_history.urls")),
 ]

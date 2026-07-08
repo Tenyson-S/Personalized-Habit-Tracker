@@ -117,5 +117,132 @@ export type VillageWorld = {
     xp_remaining: number;
   };
   story: VillageStory;
+  chapter: null | {
+    id: string;
+    title: string;
+    intention: string;
+    start_date: string;
+    days_lived: number;
+    focus_areas: string[];
+  };
   principle: string;
+};
+
+export type LifeArea =
+  | 'LEARNING'
+  | 'HEALTH'
+  | 'SLEEP'
+  | 'CAREER'
+  | 'MINDFULNESS'
+  | 'CREATIVITY'
+  | 'RELATIONSHIPS'
+  | 'PERSONAL_GROWTH'
+  | 'OTHER';
+
+export type ChapterFocus = {
+  id: string;
+  life_area: LifeArea;
+  life_area_label: string;
+  note: string;
+  position: number;
+};
+
+export type ChapterRetrospective = {
+  duration_days: number;
+  active_days: number;
+  habit_completions: number;
+  tasks_completed: number;
+  average_sleep_minutes: number | null;
+  memories_saved: number;
+  most_active_area: null | { life_area: LifeArea; xp: number };
+};
+
+export type Chapter = {
+  id: string;
+  title: string;
+  description: string;
+  intention: string;
+  start_date: string;
+  end_date: string | null;
+  status: 'ACTIVE' | 'CLOSED';
+  reflection: string;
+  focuses: ChapterFocus[];
+  retrospective: ChapterRetrospective;
+  days_lived: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MemoryType = 'MOMENT' | 'MILESTONE' | 'PEOPLE' | 'EXPERIENCE' | 'PERSONAL_CHANGE';
+
+export type Memory = {
+  id: string;
+  chapter: string | null;
+  chapter_title: string | null;
+  title: string;
+  description: string;
+  memory_type: MemoryType;
+  memory_type_label: string;
+  happened_on: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CelebrationPreferenceCategory = 'SMALL_JOY' | 'EXPERIENCE' | 'CONNECTION' | 'PLACE';
+
+export type CelebrationPreference = {
+  id: string;
+  title: string;
+  category: CelebrationPreferenceCategory;
+  category_label: string;
+  note: string;
+  is_active: boolean;
+  source_interest: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CelebrationReflectionStatus = 'SUGGESTED' | 'MAYBE_LATER' | 'COMPLETED' | 'DISMISSED';
+
+export type CelebrationReflection = {
+  id: string;
+  period_type: 'WEEKLY' | 'MONTHLY';
+  period_start: string;
+  status: CelebrationReflectionStatus;
+  prompt_text: string;
+  preference: string | null;
+  preference_title: string | null;
+  preference_category: CelebrationPreferenceCategory | null;
+  preference_category_label: string | null;
+  responded_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WorldSnapshotBuilding = {
+  key: string;
+  name: string;
+  life_area: LifeArea;
+  level: number;
+  state_label: string;
+  domain_xp: number;
+  visible: boolean;
+};
+
+export type WorldSnapshot = {
+  id: string;
+  snapshot_type: 'MONTHLY' | 'CHAPTER_END';
+  snapshot_type_label: string;
+  period_key: string;
+  captured_on: string;
+  village_stage: string;
+  total_xp: number;
+  environment_state: string;
+  weather: string;
+  building_states: WorldSnapshotBuilding[];
+  unlocks: { key: string; name: string; category: string }[];
+  summary: string;
+  chapter: string | null;
+  chapter_title: string | null;
+  created_at: string;
 };

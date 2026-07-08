@@ -26,6 +26,10 @@ INSTALLED_APPS = [
     "apps.sleep",
     "apps.progress",
     "apps.village",
+    "apps.chapters",
+    "apps.memories",
+    "apps.celebrations",
+    "apps.world_history",
 ]
 
 MIDDLEWARE = [
@@ -101,8 +105,8 @@ SIMPLE_JWT = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Village API",
-    "DESCRIPTION": "Phase 2 Living Village API for a calm personal growth companion.",
-    "VERSION": "0.2.0",
+    "DESCRIPTION": "Village API for a calm personal growth companion with life chapters, memories, celebrations, and world history.",
+    "VERSION": "0.3.1",
 }
 
 CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]
