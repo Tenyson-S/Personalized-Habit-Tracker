@@ -25,6 +25,7 @@ class VillageProfile(models.Model):
 class RewardEvent(models.Model):
     class EventType(models.TextChoices):
         HABIT = "HABIT", "Habit completion"
+        DAILY = "DAILY", "Daily completion"
         TASK = "TASK", "Task completion"
         SLEEP = "SLEEP", "Completed sleep session"
 

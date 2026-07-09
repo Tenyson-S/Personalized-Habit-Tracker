@@ -9,7 +9,7 @@ from apps.chapters.models import Chapter
 from apps.memories.models import Memory
 from apps.progress.services import local_date_for
 from apps.village.models import RewardEvent
-from apps.village.services import BUILDINGS, BUILDING_STATE_LABELS, UNLOCK_RULES, _building_level, _stage_for
+from apps.village.services import BUILDINGS, BUILDING_STATE_LABELS, UNLOCK_RULES, _building_level, _stage_for, canonical_area
 
 from .models import WorldSnapshot
 
@@ -47,7 +47,7 @@ def historical_state(user, as_of_date, period_start=None):
 
     domain_totals = defaultdict(int)
     for row in events.values("life_area").annotate(total=Sum("xp")):
-        domain_totals[row["life_area"]] = row["total"] or 0
+        domain_totals[canonical_area(row["life_area"])] += row["total"] or 0
 
     buildings = []
     definitions_by_area = {area: definition for area, definition in BUILDINGS.items()}
@@ -74,8 +74,10 @@ def historical_state(user, as_of_date, period_start=None):
     period_events = RewardEvent.objects.filter(user=user, event_date__range=(start, as_of_date))
     action_count = period_events.count()
     environment_state, weather = _environment_from_activity(action_count)
-    period_area_totals = list(period_events.values("life_area").annotate(total=Sum("xp")).order_by("-total"))
-    most_visible = period_area_totals[0]["life_area"] if period_area_totals else None
+    period_area_totals = defaultdict(int)
+    for row in period_events.values("life_area").annotate(total=Sum("xp")):
+        period_area_totals[canonical_area(row["life_area"])] += row["total"] or 0
+    most_visible = max(period_area_totals, key=period_area_totals.get) if period_area_totals else None
     visible_count = sum(1 for item in buildings if item["visible"])
 
     return {

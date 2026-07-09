@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.db import transaction
 from django.db.models import Count, Sum
 from django.utils import timezone
+from apps.dailies.models import DailyCompletion
 from apps.habits.models import HabitCompletion
 from apps.sleep.models import SleepSession
 from apps.tasks.models import Task
@@ -12,14 +13,21 @@ from .models import RewardEvent, VillageBuilding, VillageProfile, VillageUnlock
 BUILDINGS = {
     "LEARNING": {"key": "LIBRARY", "name": "Library", "icon": "📚", "meaning": "Learning and knowledge"},
     "HEALTH": {"key": "FARM", "name": "Farm", "icon": "🌾", "meaning": "Health and nourishment"},
-    "SLEEP": {"key": "HEARTH", "name": "Hearth", "icon": "🏡", "meaning": "Rest and personal stability"},
+    "REST": {"key": "HEARTH", "name": "Hearth", "icon": "🏡", "meaning": "Rest and personal stability"},
     "CAREER": {"key": "OBSERVATORY", "name": "Observatory", "icon": "🔭", "meaning": "Career and long-term direction"},
     "MINDFULNESS": {"key": "GARDEN", "name": "Garden", "icon": "🌿", "meaning": "Mindfulness and inner calm"},
     "CREATIVITY": {"key": "WORKSHOP", "name": "Artisan Workshop", "icon": "🎨", "meaning": "Creativity and craft"},
     "RELATIONSHIPS": {"key": "TOWN_SQUARE", "name": "Town Square", "icon": "🤝", "meaning": "Relationships and connection"},
     "PERSONAL_GROWTH": {"key": "CENTRAL_TREE", "name": "Central Tree", "icon": "🌳", "meaning": "Personal growth and identity"},
-    "OTHER": {"key": "WINDMILL", "name": "Windmill", "icon": "🌬️", "meaning": "Everything else that keeps life moving"},
+    "LIFE_ADMIN": {"key": "WINDMILL", "name": "Windmill", "icon": "🌬️", "meaning": "Everything else that keeps life moving"},
 }
+
+AREA_ALIASES = {"SLEEP": "REST", "OTHER": "LIFE_ADMIN"}
+
+
+def canonical_area(value):
+    return AREA_ALIASES.get(value, value if value in BUILDINGS else "LIFE_ADMIN")
+
 
 BUILDING_THRESHOLDS = [0, 40, 120, 300, 650]
 STAGE_THRESHOLDS = [
@@ -136,13 +144,32 @@ def sync_village(user):
             source_id=str(item.id),
             defaults={
                 "event_date": item.date,
-                "life_area": item.habit.life_area,
+                "life_area": canonical_area(item.habit.life_area),
                 "xp": 10,
                 "coins": 5,
                 "title": f"Completed {item.habit.name}",
             },
         )
     RewardEvent.objects.filter(user=user, event_type=RewardEvent.EventType.HABIT).exclude(source_id__in=valid_habit_ids).delete()
+
+    daily_completions = list(
+        DailyCompletion.objects.filter(daily__user=user, completed=True).select_related("daily")
+    )
+    valid_daily_ids = {str(item.id) for item in daily_completions}
+    for item in daily_completions:
+        RewardEvent.objects.update_or_create(
+            user=user,
+            event_type=RewardEvent.EventType.DAILY,
+            source_id=str(item.id),
+            defaults={
+                "event_date": item.date,
+                "life_area": canonical_area(item.daily.life_area),
+                "xp": 8,
+                "coins": 4,
+                "title": f"Completed {item.daily.title}",
+            },
+        )
+    RewardEvent.objects.filter(user=user, event_type=RewardEvent.EventType.DAILY).exclude(source_id__in=valid_daily_ids).delete()
 
     completed_tasks = list(Task.objects.filter(user=user, completed=True, completed_at__isnull=False))
     valid_task_ids = {str(item.id) for item in completed_tasks}
@@ -154,7 +181,7 @@ def sync_village(user):
             source_id=str(item.id),
             defaults={
                 "event_date": timezone.localtime(item.completed_at, tz).date(),
-                "life_area": item.life_area,
+                "life_area": canonical_area(item.life_area),
                 "xp": xp,
                 "coins": coins,
                 "title": f"Finished {item.title}",
@@ -181,7 +208,7 @@ def sync_village(user):
             source_id=source_id,
             defaults={
                 "event_date": timezone.localtime(item.wake_at, tz).date(),
-                "life_area": "SLEEP",
+                "life_area": "REST",
                 "xp": 8,
                 "coins": 4,
                 "title": "Completed a rest period",
@@ -198,7 +225,7 @@ def sync_village(user):
 
     domain_totals = defaultdict(int)
     for row in RewardEvent.objects.filter(user=user).values("life_area").annotate(total=Sum("xp")):
-        domain_totals[row["life_area"]] = row["total"] or 0
+        domain_totals[canonical_area(row["life_area"])] += row["total"] or 0
 
     now = timezone.now()
     for life_area, definition in BUILDINGS.items():
@@ -303,23 +330,23 @@ def _story_for(user, environment, definitions_by_area):
     today = local_date_for(user)
     latest = RewardEvent.objects.filter(user=user).first()
     if latest and latest.event_date == today:
-        definition = definitions_by_area.get(latest.life_area, BUILDINGS["OTHER"])
+        definition = definitions_by_area.get(canonical_area(latest.life_area), BUILDINGS["LIFE_ADMIN"])
         return {
             "kind": "TODAY_CHANGED",
             "title": EVENT_STORY_TITLES.get(definition["key"], "The village changed a little today."),
             "message": f"{latest.title}. That real-life action is now part of this place.",
             "building_key": definition["key"],
-            "life_area": latest.life_area,
+            "life_area": canonical_area(latest.life_area),
         }
 
     if latest and latest.event_date >= today - timedelta(days=6):
-        definition = definitions_by_area.get(latest.life_area, BUILDINGS["OTHER"])
+        definition = definitions_by_area.get(canonical_area(latest.life_area), BUILDINGS["LIFE_ADMIN"])
         return {
             "kind": "RECENT_MEMORY",
             "title": "The village remembers this week.",
             "message": f"Your recent {definition['meaning'].lower()} efforts are still visible, even on a quieter day.",
             "building_key": definition["key"],
-            "life_area": latest.life_area,
+            "life_area": canonical_area(latest.life_area),
         }
 
     if environment["state"] == "QUIET":
@@ -350,12 +377,13 @@ def world_payload(user):
     today = local_date_for(user)
     recent_cutoff = today - timedelta(days=6)
 
-    recent_counts = {
-        row["life_area"]: row["count"]
-        for row in RewardEvent.objects.filter(user=user, event_date__gte=recent_cutoff)
+    recent_counts = defaultdict(int)
+    for row in (
+        RewardEvent.objects.filter(user=user, event_date__gte=recent_cutoff)
         .values("life_area")
         .annotate(count=Count("id"))
-    }
+    ):
+        recent_counts[canonical_area(row["life_area"])] += row["count"]
 
     buildings = []
     for building in VillageBuilding.objects.filter(user=user):

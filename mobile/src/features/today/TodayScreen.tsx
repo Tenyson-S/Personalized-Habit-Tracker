@@ -109,7 +109,7 @@ export function TodayScreen() {
           const completed = Boolean(daily.completion?.completed);
           return <Pressable key={daily.id} onPress={() => completeDaily.mutate({ id: daily.id, date: data.date, completed: !completed })} style={styles.itemRow}>
             <View style={[styles.check, completed && styles.checkDone]}><Text>{completed ? '✓' : ''}</Text></View>
-            <View style={{ flex: 1 }}><Text style={styles.itemTitle}>{daily.title}</Text><Text style={styles.muted}>{daily.preferred_time ? `Scheduled ${daily.preferred_time.slice(0,5)}` : daily.life_area.replaceAll('_',' ')}</Text></View>
+            <View style={{ flex: 1 }}><Text style={styles.itemTitle}>{daily.title}</Text><Text style={styles.muted}>{daily.life_area.replaceAll('_',' ')}</Text></View>
           </Pressable>;
         })}
       </Card>
@@ -119,7 +119,7 @@ export function TodayScreen() {
         {data.tasks.length === 0 ? <Text style={styles.muted}>Nothing waiting for you here.</Text> : data.tasks.map((task) => (
           <Pressable key={task.id} onPress={() => completeTask.mutate({ id: task.id, completed: !task.completed })} style={styles.itemRow}>
             <View style={[styles.check, task.completed && styles.checkDone]}><Text>{task.completed ? '✓' : ''}</Text></View>
-            <View style={{ flex: 1 }}><Text style={styles.itemTitle}>{task.title}</Text><Text style={styles.muted}>{task.priority.toLowerCase()}</Text></View>
+            <View style={{ flex: 1 }}><Text style={styles.itemTitle}>{task.title}</Text><Text style={styles.muted}>{task.life_area.replaceAll('_',' ')}</Text></View>
           </Pressable>
         ))}
       </Card>

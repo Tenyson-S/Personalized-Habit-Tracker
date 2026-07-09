@@ -26,6 +26,7 @@ export type TaskToday = {
   id: string;
   title: string;
   priority: 'LOW' | 'NORMAL' | 'IMPORTANT';
+  life_area: string;
   due_date: string | null;
   completed: boolean;
 };
@@ -246,4 +247,109 @@ export type WorldSnapshot = {
   chapter: string | null;
   chapter_title: string | null;
   created_at: string;
+};
+
+export type AnalyticsPeriod = '7d' | '30d' | '90d' | '1y';
+
+export type AnalyticsLifeArea = {
+  key: string;
+  label: string;
+  habit_completions: number;
+  daily_completions: number;
+  tasks_completed: number;
+  sleep_sessions: number;
+  total_actions: number;
+  active_days: number;
+  share_percent: number;
+};
+
+export type AnalyticsSummary = {
+  active_days: number;
+  habit_completions: number;
+  daily_completions: number;
+  tasks_completed: number;
+  sleep_sessions: number;
+  average_sleep_minutes: number | null;
+  memories_kept: number;
+  total_actions: number;
+};
+
+export type AnalyticsInsight = {
+  kind: 'QUIET' | 'LIFE_AREA' | 'RHYTHM' | 'REST' | 'TASKS';
+  title: string;
+  message: string;
+};
+
+export type AnalyticsOverview = {
+  period: AnalyticsPeriod;
+  range: { start: string; end: string; days: number };
+  previous_range: { start: string; end: string; days: number };
+  current: AnalyticsSummary;
+  previous: AnalyticsSummary;
+  comparison: Record<string, number | null>;
+  life_areas: AnalyticsLifeArea[];
+  insights: AnalyticsInsight[];
+  active_chapter: null | { id: string; title: string; start_date: string; days_lived: number };
+};
+
+export type AnalyticsRhythmArea = {
+  key: string;
+  label: string;
+  counts: number[];
+  total: number;
+};
+
+export type AnalyticsRhythm = {
+  period: AnalyticsPeriod;
+  range: { start: string; end: string };
+  weekdays: string[];
+  areas: AnalyticsRhythmArea[];
+  time_buckets: {
+    key: string;
+    label: string;
+    count: number;
+    top_area: string | null;
+    top_area_label: string | null;
+  }[];
+  reflection: string;
+};
+
+export type TaskAnalytics = {
+  period: AnalyticsPeriod;
+  range: { start: string; end: string };
+  current: {
+    created: number;
+    completed: number;
+    open_now: number;
+    recurring_completed: number;
+    average_completion_hours: number | null;
+    deadline_behavior: {
+      with_deadline: number;
+      early: number;
+      on_time: number;
+      late: number;
+      without_deadline: number;
+    };
+    priority_distribution: { priority: string; count: number }[];
+    life_area_distribution: { key: string; label: string; count: number }[];
+    reflection: string;
+  };
+  previous: TaskAnalytics['current'];
+  comparison: {
+    created_delta: number;
+    completed_delta: number;
+    average_completion_hours_delta: number | null;
+  };
+};
+
+export type AnalyticsRecords = {
+  window: { start: string; end: string };
+  records: {
+    key: string;
+    title: string;
+    value: string;
+    unit: string;
+    detail: string;
+  }[];
+  principle: string;
 };

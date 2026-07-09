@@ -123,6 +123,7 @@ def today_payload(user):
                 "priority": t.priority,
                 "due_date": t.due_date,
                 "completed": t.completed,
+                "life_area": t.life_area,
             }
             for t in tasks
         ],

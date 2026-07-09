@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "apps.world_history",
     "apps.classification",
     "apps.dailies",
+    "apps.analytics",
 ]
 
 MIDDLEWARE = [
@@ -108,7 +109,7 @@ SIMPLE_JWT = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Village API",
     "DESCRIPTION": "Village API for a calm personal growth companion with life chapters, memories, celebrations, and world history.",
-    "VERSION": "0.3.2",
+    "VERSION": "0.4.0",
 }
 
 CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]

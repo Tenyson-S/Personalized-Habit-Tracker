@@ -1,67 +1,86 @@
-# Build Status — Phase 1 Seed
+# Build Status — Phase 3D Personal Insight & Statistics Engine
 
-## Working now
+## Source-of-truth base
 
-### Backend vertical slice
+This release was built from the uploaded current repository snapshot containing the user's latest 24-hour changes:
 
-- [x] Email registration/login
-- [x] JWT access/refresh rotation and logout blacklist
-- [x] Google ID-token verification endpoint (requires OAuth client configuration)
-- [x] Profile and onboarding interests
-- [x] Daily / selected-weekday habit model
-- [x] Boolean and measurable habit completion
-- [x] Current streak, longest streak, lifetime completion days
-- [x] 30-day and 90-day consistency
-- [x] One-time task CRUD and completion
-- [x] Manual sleep start/wake
-- [x] Sleep duration and consistency summary
-- [x] Today aggregate endpoint
-- [x] Yesterday vs today comparison
-- [x] Daily / weekly / monthly journey comparisons
-- [x] Village Seed state: Quiet / Resting / Stable / Growing / Blooming
-- [x] OpenAPI schema
-- [x] Automated API/domain tests
+- silent ML auto-categorization,
+- expanded classifier seed examples,
+- retrained TF-IDF + Logistic Regression model flow,
+- native date/time pickers,
+- Expo Go-safe notification fallback.
 
-### Android client vertical slice
+## Implemented
 
-- [x] Expo SDK 57 + React Native + TypeScript
-- [x] Secure JWT persistence
-- [x] Automatic access-token refresh
-- [x] Email login and registration
-- [x] Onboarding interest selection
-- [x] Today screen
-- [x] Habit/task quick completion
-- [x] Quick creation for basic daily habits and one-time tasks
-- [x] Manual sleep start/wake
-- [x] Yesterday vs today summary
-- [x] Village Seed reflection screen
-- [x] Daily / weekly / monthly Journey screen
-- [x] Profile and sign-out
-- [x] Android Metro production export validation
+### Analytics backend
 
-## Next slices before calling Phase 1 product-complete
+- [x] 7 / 30 / 90 day and 1 year periods
+- [x] Active-day aggregation
+- [x] Habit completion analytics
+- [x] Daily completion analytics
+- [x] Task completion analytics
+- [x] Average recorded sleep
+- [x] Memory counts
+- [x] Nine-area activity distribution
+- [x] Legacy `SLEEP` → `REST` normalization
+- [x] Legacy `OTHER` → `LIFE_ADMIN` normalization
+- [x] Previous-period comparison
+- [x] Deterministic observation engine
+- [x] Weekly rhythm matrix
+- [x] Time-of-day patterns
+- [x] Task deadline behavior
+- [x] Habit detail analytics
+- [x] Daily detail analytics
+- [x] Personal records
+- [x] Day/week/month comparison endpoint
+- [x] User privacy scoping
 
-- [ ] Client-side Google Sign-In configuration and UI
-- [ ] Full habit editor: selected weekdays, measurable units, archive/edit
-- [ ] Full task editor: description, life area, due date, priority
-- [ ] Habit history and GitHub-style heatmap
-- [ ] Sleep history UI and bedtime/wake consistency visuals
-- [ ] SQLite cache and offline mutation queue
-- [ ] Firebase Cloud Messaging with notification budgets
-- [ ] Accessibility pass and large-text validation
-- [ ] E2E tests on Android emulator/device
-- [ ] PostgreSQL integration test in CI
-- [ ] Production deployment configuration
+### Village integration
 
-## Validation completed in this handoff
+- [x] Completed Dailies create Village reward events
+- [x] Dailies are idempotent and reversible through source-linked rewards
+- [x] `REST` grows the Hearth
+- [x] `LIFE_ADMIN` grows the Windmill
+- [x] Legacy category aliases remain compatible
+- [x] World History normalizes canonical categories
+
+### Mobile
+
+- [x] Journey → Insights section
+- [x] Period selector
+- [x] Calm summary metrics
+- [x] Deterministic insight cards
+- [x] Life-area visibility bars
+- [x] Weekly rhythm matrix
+- [x] Time-of-day summary
+- [x] Task deadline behavior
+- [x] “Things that became visible” records
+- [x] Missing sleep shown as `No record`
+- [x] No new charting dependency
+
+## Validation
 
 - Django system check: pass
-- Backend automated tests: 7/7 pass
-- Python compile check: pass
-- TypeScript `tsc --noEmit`: pass
-- Expo SDK dependency compatibility check: pass using local SDK map
-- Android Metro export: pass (892 modules)
+- Migration drift check: pass
+- Backend automated tests: **34/34 pass**
+- TypeScript strict check: pass
+- Android production export: pass
+- Metro production bundle: **1028 modules**
 
-## Known toolchain note
+## Honest boundaries
 
-`npm audit` currently reports moderate-severity advisories inside the Expo CLI/toolchain dependency tree. There are no high or critical findings in this install, and npm proposes an unsafe major downgrade rather than a non-breaking remediation. Do not run `npm audit fix --force` blindly; reassess these advisories as Expo publishes patched dependency releases.
+- Analytics are calculated on demand; a dedicated snapshot/cache table is not yet necessary for the current data scale.
+- Recurring Task rules remain definitions; this phase does not add a full occurrence-materialization engine.
+- Time-of-day patterns rely on recorded completion timestamps. Historical entries without timestamps are excluded from time-bucket analysis.
+- The ML seed dataset remains a baseline. Real correction data should drive future retraining.
+- Expo Go reminder stubs remain a development fallback; production notification behavior still requires validation in a development/production Android build.
+
+## Recommended next step
+
+Use Phase 3D with real activity for at least 7–14 days. The next product decision should be based on which patterns prove useful in real life:
+
+- deeper activity detail pages,
+- better recurrence occurrence handling,
+- offline-first synchronization,
+- richer memory media,
+- or a focused AI insight layer built only after enough real longitudinal data exists.

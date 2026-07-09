@@ -19,4 +19,5 @@ urlpatterns = [
     path("api/", include("apps.world_history.urls")),
     path("api/", include("apps.classification.urls")),
     path("api/", include("apps.dailies.urls")),
+    path("api/", include("apps.analytics.urls")),
 ]

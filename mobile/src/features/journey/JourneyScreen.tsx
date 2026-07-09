@@ -7,9 +7,10 @@ import { Screen } from '../../components/Screen';
 import { api } from '../../services/api';
 import { colors, spacing } from '../../theme/tokens';
 import { StoryPanel } from './StoryPanel';
+import { InsightsPanel } from './InsightsPanel';
 
-type Period = 'daily' | 'weekly' | 'monthly' | 'story';
-type ReflectionPeriod = Exclude<Period, 'story'>;
+type Period = 'daily' | 'weekly' | 'monthly' | 'insights' | 'story';
+type ReflectionPeriod = Exclude<Period, 'story' | 'insights'>;
 type Metrics = { habit_completion_rate: number | null; tasks_completed: number; average_sleep_minutes: number | null };
 type Celebration = {
   kind: 'MOMENTUM' | 'ENJOYMENT' | 'MEMORY';
@@ -42,7 +43,7 @@ export function JourneyScreen() {
   const journey = useQuery({
     queryKey: ['journey', period],
     queryFn: async () => (await api.get<Journey>(`/journey/${period}/`)).data,
-    enabled: period !== 'story',
+    enabled: period !== 'story' && period !== 'insights',
   });
 
   return (
@@ -50,14 +51,14 @@ export function JourneyScreen() {
       <Text style={styles.eyebrow}>YOUR JOURNEY</Text>
       <Text style={styles.title}>Only you, compared with you.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {(['daily', 'weekly', 'monthly', 'story'] as Period[]).map((item) => (
+        {(['daily', 'weekly', 'monthly', 'insights', 'story'] as Period[]).map((item) => (
           <Pressable key={item} onPress={() => setPeriod(item)} style={[styles.tab, period === item && styles.tabActive]}>
             <Text style={period === item ? styles.tabTextActive : styles.tabText}>{item}</Text>
           </Pressable>
         ))}
       </ScrollView>
 
-      {period === 'story' ? <StoryPanel /> : journey.isLoading || !journey.data ? <ActivityIndicator /> : (
+      {period === 'story' ? <StoryPanel /> : period === 'insights' ? <InsightsPanel /> : journey.isLoading || !journey.data ? <ActivityIndicator /> : (
         <>
           <View style={styles.metricsRow}>
             <Card>
