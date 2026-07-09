@@ -5,8 +5,10 @@ import { Card } from '../../components/Card';
 import { ProgressBar } from '../../components/ProgressBar';
 import { Screen } from '../../components/Screen';
 import { api } from '../../services/api';
+import { ActivityComposer } from './ActivityComposer';
+import { ActivityManager } from './ActivityManager';
 import { colors, radius, spacing } from '../../theme/tokens';
-import type { TodayPayload, VillageWorld } from '../../types/api';
+import type { Chapter, TodayPayload, VillageWorld } from '../../types/api';
 
 function formatMinutes(value?: number | null) {
   if (value == null) return 'No sleep recorded';
@@ -15,61 +17,14 @@ function formatMinutes(value?: number | null) {
   return `${hours}h ${minutes}m`;
 }
 
-function QuickAdd({ onCreated }: { onCreated: () => void }) {
-  const [mode, setMode] = useState<'habit' | 'task'>('habit');
-  const [title, setTitle] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  async function create() {
-    if (!title.trim()) return;
-    try {
-      setSaving(true);
-      if (mode === 'habit') {
-        await api.post('/habits/', {
-          name: title.trim(),
-          life_area: 'PERSONAL_GROWTH',
-          habit_type: 'BOOLEAN',
-          target_value: null,
-          unit: '',
-          start_date: new Date().toISOString().slice(0, 10),
-          is_active: true,
-          schedule: { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true },
-        });
-      } else {
-        await api.post('/tasks/', { title: title.trim(), life_area: 'OTHER', priority: 'NORMAL', due_date: new Date().toISOString().slice(0, 10) });
-      }
-      setTitle('');
-      onCreated();
-    } catch {
-      Alert.alert('Could not add it', 'Nothing was lost. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Card>
-      <Text style={styles.sectionTitle}>Add something that matters</Text>
-      <View style={styles.segmentRow}>
-        {(['habit', 'task'] as const).map((item) => (
-          <Pressable key={item} onPress={() => setMode(item)} style={[styles.segment, mode === item && styles.segmentActive]}>
-            <Text style={mode === item ? styles.segmentTextActive : styles.segmentText}>{item === 'habit' ? 'Habit' : 'Task'}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <TextInput value={title} onChangeText={setTitle} placeholder={mode === 'habit' ? 'Example: Read for a while' : 'Example: Finish portfolio section'} style={styles.input} />
-      <Pressable onPress={create} disabled={saving || !title.trim()} style={styles.secondaryButton}>
-        <Text style={styles.secondaryButtonText}>{saving ? 'Adding…' : 'Add quietly'}</Text>
-      </Pressable>
-    </Card>
-  );
-}
-
 export function TodayScreen() {
   const queryClient = useQueryClient();
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   const today = useQuery({ queryKey: ['today'], queryFn: async () => (await api.get<TodayPayload>('/today/')).data });
   const sleepCurrent = useQuery({ queryKey: ['sleep-current'], queryFn: async () => (await api.get('/sleep/current/')).data });
   const village = useQuery({ queryKey: ['village'], queryFn: async () => (await api.get<VillageWorld>('/village/')).data, staleTime: 20_000 });
+  const currentChapter = useQuery({ queryKey: ['chapter-current'], queryFn: async () => (await api.get<Chapter | null>('/chapters/current/')).data });
 
   const refresh = async () => {
     await Promise.all([
@@ -79,6 +34,10 @@ export function TodayScreen() {
   };
   const completeHabit = useMutation({
     mutationFn: async ({ id, date, completed }: { id: string; date: string; completed: boolean }) => api.put(`/habits/${id}/completion/${date}/`, { completed }),
+    onSuccess: refresh,
+  });
+  const completeDaily = useMutation({
+    mutationFn: async ({ id, date, completed }: { id: string; date: string; completed: boolean }) => api.put(`/dailies/${id}/completion/${date}/`, { completed }),
     onSuccess: refresh,
   });
   const completeTask = useMutation({
@@ -113,21 +72,22 @@ export function TodayScreen() {
         <ProgressBar value={data.progress_percent} />
       </Card>
 
-      {village.data && (
-        <Card>
+      {currentChapter.data ? (
+        <View style={styles.chapterCard}>
           <View style={styles.rowBetween}>
-            <View>
-              <Text style={styles.sectionTitle}>Your {village.data.stage_label}</Text>
-              <Text style={styles.muted}>Real-life actions are becoming visible.</Text>
-            </View>
-            <View style={styles.villageMiniStats}>
-              <Text style={styles.progressText}>{village.data.total_xp} XP</Text>
-              <Text style={styles.coinText}>🪙 {village.data.coins}</Text>
-            </View>
+            <Text style={styles.chapterEyebrow}>CURRENT CHAPTER</Text>
+            <Text style={styles.chapterDay}>Day {currentChapter.data.days_lived}</Text>
           </View>
-          <ProgressBar value={village.data.next_stage.progress_percent} />
+          <Text style={styles.chapterTitle}>{currentChapter.data.title}</Text>
+          {currentChapter.data.intention ? <Text style={styles.chapterIntention}>{currentChapter.data.intention}</Text> : null}
+          <Text style={styles.chapterHint}>This gives context to the life you are already living. Manage it from Journey.</Text>
+        </View>
+      ) : village.data ? (
+        <Card>
+          <Text style={styles.sectionTitle}>Your {village.data.stage_label}</Text>
+          <Text style={styles.muted}>Real-life actions are becoming visible. A life chapter can be started from Journey whenever one feels true.</Text>
         </Card>
-      )}
+      ) : null}
 
       <Card>
         <Text style={styles.sectionTitle}>Habits</Text>
@@ -139,6 +99,18 @@ export function TodayScreen() {
               <View style={{ flex: 1 }}><Text style={styles.itemTitle}>{habit.name}</Text><Text style={styles.muted}>{habit.life_area.replaceAll('_', ' ')}</Text></View>
             </Pressable>
           );
+        })}
+      </Card>
+
+
+      <Card>
+        <Text style={styles.sectionTitle}>Dailies</Text>
+        {data.dailies.length === 0 ? <Text style={styles.muted}>No dailies scheduled today.</Text> : data.dailies.map((daily) => {
+          const completed = Boolean(daily.completion?.completed);
+          return <Pressable key={daily.id} onPress={() => completeDaily.mutate({ id: daily.id, date: data.date, completed: !completed })} style={styles.itemRow}>
+            <View style={[styles.check, completed && styles.checkDone]}><Text>{completed ? '✓' : ''}</Text></View>
+            <View style={{ flex: 1 }}><Text style={styles.itemTitle}>{daily.title}</Text><Text style={styles.muted}>{daily.preferred_time ? `Scheduled ${daily.preferred_time.slice(0,5)}` : daily.life_area.replaceAll('_',' ')}</Text></View>
+          </Pressable>;
         })}
       </Card>
 
@@ -167,7 +139,12 @@ export function TodayScreen() {
         <Text style={styles.muted}>A comparison, not a score.</Text>
       </Card>
 
-      <QuickAdd onCreated={refresh} />
+      <View style={styles.actionRow}>
+        <Pressable onPress={() => setComposerOpen(true)} style={styles.primaryButton}><Text style={styles.primaryButtonText}>+ Add activity</Text></Pressable>
+        <Pressable onPress={() => setManageOpen(!manageOpen)} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>{manageOpen ? 'Hide manager' : 'Manage'}</Text></Pressable>
+      </View>
+      {manageOpen ? <ActivityManager onChanged={async () => { await Promise.all([queryClient.invalidateQueries({queryKey:['manage-habits']}),queryClient.invalidateQueries({queryKey:['manage-dailies']}),queryClient.invalidateQueries({queryKey:['manage-tasks']}),refresh()]); }} /> : null}
+      <ActivityComposer visible={composerOpen} onClose={() => setComposerOpen(false)} onSaved={async () => { await Promise.all([queryClient.invalidateQueries({queryKey:['manage-habits']}),queryClient.invalidateQueries({queryKey:['manage-dailies']}),queryClient.invalidateQueries({queryKey:['manage-tasks']}),refresh()]); }} />
     </Screen>
   );
 }
@@ -188,8 +165,12 @@ const styles = StyleSheet.create({
   primaryButton: { backgroundColor: colors.primary, padding: spacing.md, borderRadius: radius.md, alignItems: 'center' },
   primaryButtonText: { color: 'white', fontWeight: '700' },
   reflectionLine: { color: colors.text, fontSize: 16 },
-  villageMiniStats: { alignItems: 'flex-end', gap: 4 },
-  coinText: { color: colors.text, fontWeight: '700' },
+  chapterCard: { backgroundColor: '#E7EBDD', borderRadius: 22, borderWidth: 1, borderColor: '#D4DBC9', padding: 18, gap: 8 },
+  chapterEyebrow: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.4 },
+  chapterDay: { color: colors.primary, fontSize: 11, fontWeight: '800' },
+  chapterTitle: { color: colors.text, fontSize: 22, lineHeight: 27, fontWeight: '800' },
+  chapterIntention: { color: '#536052', lineHeight: 21, fontStyle: 'italic' },
+  chapterHint: { color: colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 2 },
   segmentRow: { flexDirection: 'row', gap: spacing.sm },
   segment: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: 99, borderWidth: 1, borderColor: colors.border },
   segmentActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
@@ -198,4 +179,5 @@ const styles = StyleSheet.create({
   input: { backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, color: colors.text },
   secondaryButton: { borderWidth: 1, borderColor: colors.primary, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
   secondaryButtonText: { color: colors.primary, fontWeight: '700' },
+  actionRow: { gap: spacing.sm },
 });

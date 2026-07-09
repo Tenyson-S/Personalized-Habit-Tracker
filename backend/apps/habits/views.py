@@ -19,6 +19,14 @@ class HabitListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(is_active=(active == "true"))
         return qs
 
+    def perform_create(self, serializer):
+        from apps.classification.services import predict_activity
+        name = serializer.validated_data.get('name', '')
+        desc = serializer.validated_data.get('description', '')
+        prediction = predict_activity(name, desc)
+        suggested_category = prediction.get('suggested_category', 'PERSONAL_GROWTH')
+        serializer.save(life_area=suggested_category)
+
 
 class HabitDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = HabitSerializer

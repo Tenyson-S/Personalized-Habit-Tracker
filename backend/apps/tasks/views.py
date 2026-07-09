@@ -18,7 +18,12 @@ class TaskListCreateView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        from apps.classification.services import predict_activity
+        title = serializer.validated_data.get('title', '')
+        desc = serializer.validated_data.get('description', '')
+        prediction = predict_activity(title, desc)
+        suggested_category = prediction.get('suggested_category', 'PERSONAL_GROWTH')
+        serializer.save(life_area=suggested_category)
 
 
 class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):

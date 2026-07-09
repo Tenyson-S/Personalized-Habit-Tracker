@@ -7,6 +7,7 @@ from apps.habits.models import Habit
 from apps.habits.services import is_habit_scheduled
 from apps.sleep.models import SleepSession
 from apps.tasks.models import Task
+from apps.dailies.models import Daily
 
 
 def user_tz(user):
@@ -80,9 +81,15 @@ def today_payload(user):
     today_metrics = day_metrics(user, today)
     yesterday_metrics = day_metrics(user, yesterday)
 
+    dailies = Daily.objects.filter(user=user, status=Daily.Status.ACTIVE, start_date__lte=today).select_related("schedule").prefetch_related("completions")
+    dailies = [d for d in dailies if d.schedule.is_scheduled(today)]
+    daily_completions = {c.daily_id:c for d in dailies for c in d.completions.all() if c.date == today}
+
     progress_parts = []
     if today_metrics["scheduled_habits"]:
         progress_parts.append(today_metrics["completed_habits"] / today_metrics["scheduled_habits"])
+    if dailies:
+        progress_parts.append(sum(1 for d in dailies if daily_completions.get(d.id) and daily_completions[d.id].completed) / len(dailies))
     if tasks:
         progress_parts.append(sum(1 for t in tasks if t.completed) / len(tasks))
     progress = round(mean(progress_parts) * 100) if progress_parts else 0
@@ -108,6 +115,7 @@ def today_payload(user):
             }
             for h in habits
         ],
+        "dailies": [{"id":str(d.id),"title":d.title,"life_area":d.life_area,"preferred_time":d.preferred_time,"completion":({"completed":daily_completions[d.id].completed} if d.id in daily_completions else None)} for d in dailies],
         "tasks": [
             {
                 "id": str(t.id),

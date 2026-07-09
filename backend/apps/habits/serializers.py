@@ -27,9 +27,9 @@ class HabitSerializer(serializers.ModelSerializer):
         model = Habit
         fields = (
             "id", "name", "description", "life_area", "habit_type", "target_value", "unit",
-            "start_date", "is_active", "schedule", "journey", "today_completion", "created_at", "updated_at"
+            "start_date", "is_active", "schedule_mode", "target_per_week", "preferred_time", "reminder_enabled", "reminder_minutes_before", "status", "schedule", "journey", "today_completion", "created_at", "updated_at"
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "life_area", "created_at", "updated_at")
 
     def validate(self, attrs):
         habit_type = attrs.get("habit_type", getattr(self.instance, "habit_type", Habit.HabitType.BOOLEAN))
@@ -37,6 +37,10 @@ class HabitSerializer(serializers.ModelSerializer):
         unit = attrs.get("unit", getattr(self.instance, "unit", ""))
         if habit_type == Habit.HabitType.MEASURABLE and (target is None or not unit.strip()):
             raise serializers.ValidationError("Measurable habits require target_value and unit.")
+        mode = attrs.get("schedule_mode", getattr(self.instance, "schedule_mode", Habit.ScheduleMode.SELECTED_DAYS))
+        weekly = attrs.get("target_per_week", getattr(self.instance, "target_per_week", None))
+        if mode == Habit.ScheduleMode.WEEKLY_TARGET and (weekly is None or weekly < 1 or weekly > 7):
+            raise serializers.ValidationError("Weekly-target habits require target_per_week between 1 and 7.")
         return attrs
 
     def create(self, validated_data):

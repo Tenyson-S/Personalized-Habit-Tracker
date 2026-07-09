@@ -5,6 +5,13 @@ from django.db import models
 
 
 class Habit(models.Model):
+    class ScheduleMode(models.TextChoices):
+        SELECTED_DAYS = "SELECTED_DAYS", "Selected days"
+        WEEKLY_TARGET = "WEEKLY_TARGET", "Number of days per week"
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Active"
+        PAUSED = "PAUSED", "Paused"
+        ARCHIVED = "ARCHIVED", "Archived"
     class HabitType(models.TextChoices):
         BOOLEAN = "BOOLEAN", "Yes / No"
         MEASURABLE = "MEASURABLE", "Measurable"
@@ -30,6 +37,12 @@ class Habit(models.Model):
     unit = models.CharField(max_length=32, blank=True)
     start_date = models.DateField()
     is_active = models.BooleanField(default=True)
+    schedule_mode = models.CharField(max_length=20, choices=ScheduleMode.choices, default=ScheduleMode.SELECTED_DAYS)
+    target_per_week = models.PositiveSmallIntegerField(null=True, blank=True)
+    preferred_time = models.TimeField(null=True, blank=True)
+    reminder_enabled = models.BooleanField(default=True)
+    reminder_minutes_before = models.PositiveSmallIntegerField(default=10)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
