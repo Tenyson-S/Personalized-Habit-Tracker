@@ -60,7 +60,21 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "config.wsgi.application"
 
-if os.getenv("USE_SQLITE", "false").lower() == "true":
+import urllib.parse
+
+db_uri = os.getenv("POSTGRES_DB_URI")
+if db_uri:
+    parsed = urllib.parse.urlparse(db_uri)
+    DATABASES = {"default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": parsed.path.lstrip("/"),
+        "USER": parsed.username,
+        "PASSWORD": parsed.password,
+        "HOST": parsed.hostname,
+        "PORT": parsed.port or 5432,
+        "CONN_MAX_AGE": 60,
+    }}
+elif os.getenv("USE_SQLITE", "false").lower() == "true":
     DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
 else:
     DATABASES = {"default": {
