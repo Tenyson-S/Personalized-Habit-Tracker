@@ -27,7 +27,7 @@ class HabitSerializer(serializers.ModelSerializer):
         model = Habit
         fields = (
             "id", "name", "description", "life_area", "habit_type", "target_value", "unit",
-            "start_date", "is_active", "schedule_mode", "target_per_week", "preferred_time", "reminder_enabled", "reminder_minutes_before", "status", "schedule", "journey", "today_completion", "created_at", "updated_at"
+            "start_date", "origin_type", "existing_since", "foundation_target", "is_active", "schedule_mode", "target_per_week", "preferred_time", "reminder_enabled", "reminder_minutes_before", "status", "schedule", "journey", "today_completion", "created_at", "updated_at"
         )
         read_only_fields = ("id", "life_area", "created_at", "updated_at")
 
@@ -41,6 +41,15 @@ class HabitSerializer(serializers.ModelSerializer):
         weekly = attrs.get("target_per_week", getattr(self.instance, "target_per_week", None))
         if mode == Habit.ScheduleMode.WEEKLY_TARGET and (weekly is None or weekly < 1 or weekly > 7):
             raise serializers.ValidationError("Weekly-target habits require target_per_week between 1 and 7.")
+        origin = attrs.get("origin_type", getattr(self.instance, "origin_type", Habit.OriginType.NEW))
+        existing_since = attrs.get("existing_since", getattr(self.instance, "existing_since", None))
+        if origin == Habit.OriginType.EXISTING and existing_since and existing_since > timezone.localdate():
+            raise serializers.ValidationError("existing_since cannot be in the future.")
+        if origin == Habit.OriginType.NEW:
+            attrs["existing_since"] = None
+        foundation_target = attrs.get("foundation_target", getattr(self.instance, "foundation_target", 21))
+        if foundation_target < 7 or foundation_target > 90:
+            raise serializers.ValidationError("foundation_target must be between 7 and 90 days.")
         return attrs
 
     def create(self, validated_data):

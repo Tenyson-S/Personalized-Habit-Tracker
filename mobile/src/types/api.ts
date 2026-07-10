@@ -22,11 +22,62 @@ export type HabitToday = {
   completion: { value: string | null; completed: boolean } | null;
 };
 
+
+export type HabitOriginType = 'NEW' | 'EXISTING';
+export type HabitHistoryStatus = 'COMPLETE' | 'MISSED' | 'OPEN' | 'REST' | 'FUTURE' | 'BEFORE_START';
+
+export type HabitFoundation = {
+  required: boolean;
+  target: number;
+  progress: number;
+  remaining: number;
+  percent: number;
+  established: boolean;
+  message: string;
+};
+
+export type HabitDashboardItem = {
+  id: string;
+  name: string;
+  description: string;
+  life_area: string;
+  origin_type: HabitOriginType;
+  preferred_time: string | null;
+  schedule_mode: 'SELECTED_DAYS' | 'WEEKLY_TARGET';
+  schedule_label: string;
+  status: 'ACTIVE' | 'PAUSED' | 'ARCHIVED';
+  today_completed: boolean;
+  foundation: HabitFoundation;
+  metrics: {
+    consistency_30_days: number;
+    consistency_90_days: number;
+    persistence_streak_weeks: number;
+    longest_persistence_weeks: number;
+    perfect_run: number;
+    total_completion_days: number;
+    returns: number;
+  };
+  history: { date: string; status: HabitHistoryStatus }[];
+};
+
+export type HabitDashboard = {
+  date: string;
+  summary: {
+    active_habits: number;
+    foundation_habits: number;
+    established_habits: number;
+    average_consistency: number;
+    strongest_persistence_weeks: number;
+    total_returns: number;
+  };
+  habits: HabitDashboardItem[];
+  principle: string;
+};
+
 export type TaskToday = {
   id: string;
   title: string;
   priority: 'LOW' | 'NORMAL' | 'IMPORTANT';
-  life_area: string;
   due_date: string | null;
   completed: boolean;
 };

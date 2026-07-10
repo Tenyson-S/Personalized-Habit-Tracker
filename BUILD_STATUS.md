@@ -1,86 +1,130 @@
-# Build Status — Phase 3D Personal Insight & Statistics Engine
+# Build Status — Hearth Phase 3E
 
-## Source-of-truth base
+## Release
 
-This release was built from the uploaded current repository snapshot containing the user's latest 24-hour changes:
+**Hearth 0.5.0 — Identity, Persistence & Gesture Navigation**
+
+## Source base
+
+Built on the current Phase 3D repository state containing:
 
 - silent ML auto-categorization,
-- expanded classifier seed examples,
-- retrained TF-IDF + Logistic Regression model flow,
-- native date/time pickers,
-- Expo Go-safe notification fallback.
+- Habits / Dailies / Tasks,
+- native date and time pickers,
+- reminder fallback for Expo Go development,
+- Village world and history,
+- Chapters and Memories,
+- Journey Insights.
 
 ## Implemented
 
-### Analytics backend
+### Brand and launch
 
-- [x] 7 / 30 / 90 day and 1 year periods
-- [x] Active-day aggregation
-- [x] Habit completion analytics
-- [x] Daily completion analytics
-- [x] Task completion analytics
-- [x] Average recorded sleep
-- [x] Memory counts
-- [x] Nine-area activity distribution
-- [x] Legacy `SLEEP` → `REST` normalization
-- [x] Legacy `OTHER` → `LIFE_ADMIN` normalization
-- [x] Previous-period comparison
-- [x] Deterministic observation engine
-- [x] Weekly rhythm matrix
-- [x] Time-of-day patterns
-- [x] Task deadline behavior
-- [x] Habit detail analytics
-- [x] Daily detail analytics
-- [x] Personal records
-- [x] Day/week/month comparison endpoint
-- [x] User privacy scoping
+- [x] App renamed from Village to Hearth
+- [x] Central brand constants
+- [x] Original Hearth mark
+- [x] Native splash artwork
+- [x] Android adaptive icon
+- [x] Animated in-app opening screen
+- [x] Stable Android package identifier preserved
+- [x] Product copy updated to Hearth where it refers to the app
 
-### Village integration
+### Habit origin and foundation
 
-- [x] Completed Dailies create Village reward events
-- [x] Dailies are idempotent and reversible through source-linked rewards
-- [x] `REST` grows the Hearth
-- [x] `LIFE_ADMIN` grows the Windmill
-- [x] Legacy category aliases remain compatible
-- [x] World History normalizes canonical categories
+- [x] New vs existing habit choice
+- [x] `origin_type` persistence
+- [x] Optional `existing_since`
+- [x] 21-check-in foundation target
+- [x] New-habit foundation does not reset on misses
+- [x] Existing habits begin established
+- [x] Off-schedule completions excluded from selected-day foundation progress
+- [x] Weekly-target foundation capped by the intentional weekly target
 
-### Mobile
+### Persistence engine
 
-- [x] Journey → Insights section
-- [x] Period selector
-- [x] Calm summary metrics
-- [x] Deterministic insight cards
-- [x] Life-area visibility bars
-- [x] Weekly rhythm matrix
-- [x] Time-of-day summary
-- [x] Task deadline behavior
-- [x] “Things that became visible” records
-- [x] Missing sleep shown as `No record`
-- [x] No new charting dependency
+- [x] Consistency percentage
+- [x] Persistence streak in weeks
+- [x] Longest persistence streak
+- [x] 60% qualifying-week threshold
+- [x] Current week remains provisional
+- [x] Perfect run retained as secondary metric
+- [x] Return/comeback count
+- [x] Random sparse check-ins do not create persistence
+
+### Habit dashboard
+
+- [x] `GET /api/habits/dashboard/`
+- [x] Private user-scoped dashboard
+- [x] Summary records
+- [x] Focus habit
+- [x] 21-day foundation visual
+- [x] Persistence and consistency metrics
+- [x] 35-day scheduled history
+- [x] Habit detail view
+- [x] Established-rhythm state
+
+### Today UI
+
+- [x] Editorial habit-first layout
+- [x] Personal greeting
+- [x] Header add action
+- [x] Persistence / consistency tiles
+- [x] Focus habit card
+- [x] Records & streaks dashboard entry
+- [x] Scheduled Habits / Dailies / Tasks retained
+- [x] Sleep controls retained
+- [x] Yesterday vs Today retained
+- [x] Activity manager retained
+
+### Navigation
+
+- [x] Horizontal swipe between Today / Village / Journey / You
+- [x] Bottom nav stays synchronized
+- [x] Edge resistance
+- [x] Vertical scroll protection through horizontal-intent detection
+
+### Analytics alignment
+
+- [x] Long-term personal records now prioritize persistence rather than strict perfection
+
+## Database migration
+
+New migration:
+
+```text
+habits.0003_habit_foundation_and_origin
+```
+
+Adds:
+
+- `origin_type`
+- `existing_since`
+- `foundation_target`
+
+Existing user activity and habit completion history are preserved.
 
 ## Validation
 
-- Django system check: pass
-- Migration drift check: pass
-- Backend automated tests: **34/34 pass**
-- TypeScript strict check: pass
-- Android production export: pass
-- Metro production bundle: **1028 modules**
+- Django system check: **PASS**
+- Migration drift check: **PASS**
+- Backend automated tests: **40 / 40 PASS**
+- TypeScript strict check: **PASS**
+- Android production export: **PASS**
+- Metro Android bundle: **921 modules**
+
+## Test coverage added
+
+- new habit foundation does not reset after a miss,
+- off-schedule completions do not advance foundation,
+- existing habits begin established,
+- persistence survives a missed day inside a qualifying week,
+- random sparse check-ins do not build persistence,
+- dashboard remains private and exposes persistence metrics.
 
 ## Honest boundaries
 
-- Analytics are calculated on demand; a dedicated snapshot/cache table is not yet necessary for the current data scale.
-- Recurring Task rules remain definitions; this phase does not add a full occurrence-materialization engine.
-- Time-of-day patterns rely on recorded completion timestamps. Historical entries without timestamps are excluded from time-bucket analysis.
-- The ML seed dataset remains a baseline. Real correction data should drive future retraining.
-- Expo Go reminder stubs remain a development fallback; production notification behavior still requires validation in a development/production Android build.
-
-## Recommended next step
-
-Use Phase 3D with real activity for at least 7–14 days. The next product decision should be based on which patterns prove useful in real life:
-
-- deeper activity detail pages,
-- better recurrence occurrence handling,
-- offline-first synchronization,
-- richer memory media,
-- or a focused AI insight layer built only after enough real longitudinal data exists.
+- Persistence currently uses calendar weeks and a 60% qualification threshold. Real use should determine whether the threshold should become user-configurable later.
+- Existing habits are marked established immediately; historical pre-Hearth completions are not fabricated.
+- The custom swipe pager keeps all four primary screens mounted. This is appropriate for the current app size but should be revisited if future screens become memory-heavy.
+- The model file was serialized with scikit-learn 1.9; the backend requirement has been aligned to `>=1.9,<2`.
+- Reminder behavior still requires validation in a development/release Android build rather than Expo Go.

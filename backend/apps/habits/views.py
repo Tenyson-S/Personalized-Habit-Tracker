@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import Habit, HabitCompletion
 from .serializers import HabitCompletionSerializer, HabitSerializer
-from .services import journey_metrics
+from .services import dashboard_payload, journey_metrics
 
 
 class HabitListCreateView(generics.ListCreateAPIView):
@@ -64,6 +64,11 @@ class HabitCompletionView(APIView):
             },
         )
         return Response(HabitCompletionSerializer(completion).data)
+
+
+class HabitDashboardView(APIView):
+    def get(self, request):
+        return Response(dashboard_payload(request.user))
 
 
 class HabitJourneyView(APIView):

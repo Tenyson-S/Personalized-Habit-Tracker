@@ -1,16 +1,33 @@
 {
   "expo": {
-    "name": "Village",
-    "slug": "project-village",
-    "version": "0.3.2",
+    "name": "Stealth Tracker",
+    "slug": "stealth-tracker",
+    "version": "0.5.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "android": {
-      "package": "com.projectvillage.seed"
+      "package": "com.projectvillage.seed",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F5F2EA"
+      }
     },
     "plugins": [
       "expo-secure-store",
-      "expo-notifications"
-    ]
+      "expo-notifications",
+      "expo-asset"
+    ],
+    "backgroundColor": "#F5F2EA",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/hearth-splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F5F2EA"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "cc3de067-6037-4eaa-8c16-9e123a04e395"
+      }
+    }
   }
 }

@@ -3,63 +3,62 @@ import { StyleSheet, View } from 'react-native';
 
 export function TabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
   const opacity = focused ? 1 : 0.72;
+  
   if (name === 'Today') {
+    // Focus / Target
     return (
       <View style={[styles.icon, { opacity }]}>
-        <View style={[styles.sunCore, { borderColor: color }]} />
-        <View style={[styles.ray, styles.rayTop, { backgroundColor: color }]} />
-        <View style={[styles.ray, styles.rayBottom, { backgroundColor: color }]} />
-        <View style={[styles.ray, styles.rayLeft, { backgroundColor: color }]} />
-        <View style={[styles.ray, styles.rayRight, { backgroundColor: color }]} />
+        <View style={[styles.targetOuter, { borderColor: color }]} />
+        <View style={[styles.targetInner, { backgroundColor: color }]} />
       </View>
     );
   }
+  
   if (name === 'Village') {
+    // Community / Structure
     return (
       <View style={[styles.icon, { opacity }]}>
-        <View style={[styles.treeCanopy, styles.treeCanopyLeft, { backgroundColor: color }]} />
-        <View style={[styles.treeCanopy, styles.treeCanopyRight, { backgroundColor: color }]} />
-        <View style={[styles.treeCanopy, styles.treeCanopyTop, { backgroundColor: color }]} />
-        <View style={[styles.treeTrunk, { backgroundColor: color }]} />
+        <View style={[styles.villageRoof, { borderColor: color }]} />
+        <View style={[styles.villageHouse, { borderColor: color }]} />
       </View>
     );
   }
+  
   if (name === 'Journey') {
+    // Ascent / Mountain
     return (
       <View style={[styles.icon, { opacity }]}>
-        <View style={[styles.journeyLine, { backgroundColor: color }]} />
-        <View style={[styles.journeyDot, styles.journeyDotTop, { backgroundColor: color }]} />
-        <View style={[styles.journeyDot, styles.journeyDotMiddle, { backgroundColor: color }]} />
-        <View style={[styles.journeyDot, styles.journeyDotBottom, { backgroundColor: color }]} />
+        <View style={[styles.mountainOuter, { borderColor: color }]} />
+        <View style={[styles.mountainInner, { borderColor: color }]} />
       </View>
     );
   }
+  
+  // You (Diamond / Core Identity)
   return (
     <View style={[styles.icon, { opacity }]}>
-      <View style={[styles.userHead, { borderColor: color }]} />
-      <View style={[styles.userBody, { borderColor: color }]} />
+      <View style={[styles.diamondOuter, { borderColor: color }]} />
+      <View style={[styles.diamondInner, { backgroundColor: color }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  icon: { width: 24, height: 24, position: 'relative', alignItems: 'center', justifyContent: 'center' },
-  sunCore: { width: 10, height: 10, borderRadius: 99, borderWidth: 2 },
-  ray: { position: 'absolute', borderRadius: 99 },
-  rayTop: { width: 2, height: 4, top: 1 },
-  rayBottom: { width: 2, height: 4, bottom: 1 },
-  rayLeft: { width: 4, height: 2, left: 1 },
-  rayRight: { width: 4, height: 2, right: 1 },
-  treeCanopy: { position: 'absolute', borderRadius: 99 },
-  treeCanopyLeft: { width: 10, height: 10, left: 3, top: 7 },
-  treeCanopyRight: { width: 11, height: 11, right: 3, top: 6 },
-  treeCanopyTop: { width: 12, height: 12, top: 2 },
-  treeTrunk: { position: 'absolute', width: 3, height: 9, bottom: 2, borderRadius: 2 },
-  journeyLine: { position: 'absolute', width: 2, height: 18, borderRadius: 99 },
-  journeyDot: { position: 'absolute', width: 6, height: 6, borderRadius: 99, borderWidth: 1, borderColor: '#F4F1E8' },
-  journeyDotTop: { top: 1, left: 6 },
-  journeyDotMiddle: { top: 9, right: 5 },
-  journeyDotBottom: { bottom: 0, left: 7 },
-  userHead: { position: 'absolute', top: 2, width: 8, height: 8, borderRadius: 99, borderWidth: 2 },
-  userBody: { position: 'absolute', bottom: 1, width: 16, height: 10, borderTopLeftRadius: 10, borderTopRightRadius: 10, borderWidth: 2, borderBottomWidth: 0 },
+  icon: { width: 24, height: 24, position: 'relative', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  
+  // Today (Target)
+  targetOuter: { width: 17, height: 17, borderRadius: 99, borderWidth: 1.5, position: 'absolute' },
+  targetInner: { width: 5, height: 5, borderRadius: 99, position: 'absolute' },
+  
+  // Village (House)
+  villageRoof: { position: 'absolute', width: 12, height: 12, borderWidth: 1.5, borderBottomWidth: 0, borderRightWidth: 0, transform: [{ rotate: '45deg' }], top: 4, borderRadius: 1.5 },
+  villageHouse: { position: 'absolute', width: 15, height: 10, borderWidth: 1.5, borderTopWidth: 0, borderBottomLeftRadius: 1.5, borderBottomRightRadius: 1.5, bottom: 4 },
+
+  // Journey (Mountain)
+  mountainOuter: { position: 'absolute', width: 17, height: 17, borderWidth: 1.5, borderBottomWidth: 0, borderRightWidth: 0, transform: [{ rotate: '45deg' }], top: 8, borderRadius: 1.5 },
+  mountainInner: { position: 'absolute', width: 7, height: 7, borderWidth: 1.5, borderBottomWidth: 0, borderRightWidth: 0, transform: [{ rotate: '45deg' }], top: 15, borderRadius: 1 },
+
+  // You (Diamond)
+  diamondOuter: { width: 14, height: 14, borderWidth: 1.5, transform: [{ rotate: '45deg' }], borderRadius: 2 },
+  diamondInner: { position: 'absolute', width: 3, height: 3, transform: [{ rotate: '45deg' }], borderRadius: 1 },
 });

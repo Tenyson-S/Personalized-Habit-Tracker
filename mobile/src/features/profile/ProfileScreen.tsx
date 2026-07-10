@@ -29,15 +29,15 @@ export function ProfileScreen() {
       <Text style={styles.eyebrow}>YOU</Text>
       <Text style={styles.title}>Your life stays yours.</Text>
       <Card>
-        <Text style={styles.name}>{me.data?.display_name || 'Village resident'}</Text>
+        <Text style={styles.name}>{me.data?.display_name || 'Hearth resident'}</Text>
         <Text style={styles.muted}>{me.data?.email}</Text>
         <Text style={styles.muted}>Timezone: {me.data?.timezone}</Text>
       </Card>
       <Card>
         <Text style={styles.sectionTitle}>Product promise</Text>
-        <Text style={styles.body}>Village reflects your effort, joy, rest, and growth. It will not rank you against strangers or decide how you should live.</Text>
+        <Text style={styles.body}>Hearth reflects your effort, joy, rest, and growth. It will not rank you against strangers or decide how you should live.</Text>
       </Card>
-      <Pressable onPress={() => Alert.alert('Leave Village?', 'You can return whenever you like.', [{ text: 'Stay', style: 'cancel' }, { text: 'Sign out', onPress: logout }])} style={styles.button}>
+      <Pressable onPress={() => Alert.alert('Leave Hearth?', 'You can return whenever you like.', [{ text: 'Stay', style: 'cancel' }, { text: 'Sign out', onPress: logout }])} style={styles.button}>
         <Text style={styles.buttonText}>Sign out</Text>
       </Pressable>
     </Screen>

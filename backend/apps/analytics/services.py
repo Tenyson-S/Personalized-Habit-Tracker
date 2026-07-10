@@ -685,15 +685,15 @@ def records_payload(user):
     longest = None
     for habit in habits:
         metrics = journey_metrics(habit, today)
-        candidate = {"habit": habit.name, "days": metrics["longest_streak"]}
-        if longest is None or candidate["days"] > longest["days"]:
+        candidate = {"habit": habit.name, "weeks": metrics["longest_persistence_weeks"]}
+        if longest is None or candidate["weeks"] > longest["weeks"]:
             longest = candidate
-    if longest and longest["days"] > 0:
+    if longest and longest["weeks"] > 0:
         records.append({
-            "key": "LONGEST_HABIT_RHYTHM",
-            "title": "Longest habit rhythm",
-            "value": str(longest["days"]),
-            "unit": "scheduled days",
+            "key": "LONGEST_PERSISTENCE",
+            "title": "Longest persistence rhythm",
+            "value": str(longest["weeks"]),
+            "unit": "weeks",
             "detail": longest["habit"],
         })
 

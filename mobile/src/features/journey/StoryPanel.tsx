@@ -80,7 +80,7 @@ export function StoryPanel() {
       <View style={styles.intro}>
         <Text style={styles.kicker}>YOUR STORY</Text>
         <Text style={styles.introTitle}>Chapters, joys, and a world that remembers.</Text>
-        <Text style={styles.introBody}>Village can reflect what you enjoy and preserve how your world changed. It still does not decide what matters for you.</Text>
+        <Text style={styles.introBody}>Hearth can reflect what you enjoy and preserve how your world changed. It still does not decide what matters for you.</Text>
       </View>
 
       <View style={styles.sectionHeader}>
@@ -91,7 +91,7 @@ export function StoryPanel() {
       {weekly.data ? (
         <CelebrationCard reflection={weekly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} />
       ) : (
-        <Card><Text style={styles.muted}>Add something you enjoy below. Village will only reflect back choices that came from you.</Text></Card>
+        <Card><Text style={styles.muted}>Add something you enjoy below. Hearth will only reflect back choices that came from you.</Text></Card>
       )}
 
       {monthly.data ? (
@@ -156,7 +156,7 @@ function CelebrationCard({
   let title = isWeekly ? 'Make room for something you enjoy.' : 'Maybe this month deserves a memory.';
   if (reflection.status === 'COMPLETED') title = 'That happened in your real life.';
   if (reflection.status === 'MAYBE_LATER') title = 'No pressure. It stays your choice.';
-  if (reflection.status === 'DISMISSED') title = 'Village will stop reflecting this back.';
+  if (reflection.status === 'DISMISSED') title = 'Hearth will stop reflecting this back.';
 
   return (
     <View style={[styles.celebrationCard, isWeekly ? styles.weeklyCard : styles.monthlyCard]}>
@@ -183,7 +183,7 @@ function CelebrationCard({
 
       {reflection.status === 'COMPLETED' && reflection.preference_title ? (
         <View style={styles.completedRow}>
-          <Text style={styles.completedText}>Village did not save this automatically.</Text>
+          <Text style={styles.completedText}>Hearth did not save this automatically.</Text>
           <Pressable onPress={() => onRemember(reflection.preference_title ?? '')}>
             <Text style={styles.inlineAction}>Keep it as a memory</Text>
           </Pressable>
@@ -307,7 +307,7 @@ function PreferenceManager({ preferences, onChanged }: { preferences: Celebratio
 
   return (
     <View style={styles.preferenceCard}>
-      <Text style={styles.muted}>Village only reflects things that came from you. Pause anything that no longer feels like you.</Text>
+      <Text style={styles.muted}>Hearth only reflects things that came from you. Pause anything that no longer feels like you.</Text>
       <View style={styles.preferenceList}>
         {preferences.map((preference) => (
           <View key={preference.id} style={styles.preferenceRow}>

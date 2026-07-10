@@ -5,6 +5,10 @@ from django.db import models
 
 
 class Habit(models.Model):
+    class OriginType(models.TextChoices):
+        NEW = "NEW", "New to my life"
+        EXISTING = "EXISTING", "Already part of my life"
+
     class ScheduleMode(models.TextChoices):
         SELECTED_DAYS = "SELECTED_DAYS", "Selected days"
         WEEKLY_TARGET = "WEEKLY_TARGET", "Number of days per week"
@@ -36,6 +40,9 @@ class Habit(models.Model):
     target_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
     unit = models.CharField(max_length=32, blank=True)
     start_date = models.DateField()
+    origin_type = models.CharField(max_length=12, choices=OriginType.choices, default=OriginType.NEW)
+    existing_since = models.DateField(null=True, blank=True)
+    foundation_target = models.PositiveSmallIntegerField(default=21)
     is_active = models.BooleanField(default=True)
     schedule_mode = models.CharField(max_length=20, choices=ScheduleMode.choices, default=ScheduleMode.SELECTED_DAYS)
     target_per_week = models.PositiveSmallIntegerField(null=True, blank=True)

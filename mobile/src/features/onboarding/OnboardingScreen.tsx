@@ -52,11 +52,11 @@ export function OnboardingScreen() {
       <Text style={styles.eyebrow}>WELCOME TO VILLAGE</Text>
       <Text style={styles.title}>Tell us what matters. You stay in charge.</Text>
       <ChoiceGroup title="What would you like to care for?" subtitle="Choose any areas you want to notice more clearly." options={improveOptions} selected={improve} toggle={(item) => toggle(item, improve, setImprove)} />
-      <ChoiceGroup title="What makes life enjoyable?" subtitle="Village may quietly remind you of these after meaningful periods." options={enjoyOptions} selected={enjoy} toggle={(item) => toggle(item, enjoy, setEnjoy)} />
+      <ChoiceGroup title="What makes life enjoyable?" subtitle="Hearth may quietly remind you of these after meaningful periods." options={enjoyOptions} selected={enjoy} toggle={(item) => toggle(item, enjoy, setEnjoy)} />
       <Pressable onPress={() => save.mutate()} disabled={save.isPending} style={styles.button}>
         <Text style={styles.buttonText}>{save.isPending ? 'Saving…' : 'Begin my journey'}</Text>
       </Pressable>
-      <Text style={styles.footer}>Village reflects you. It does not manage you.</Text>
+      <Text style={styles.footer}>Hearth reflects you. It does not manage you.</Text>
     </Screen>
   );
 }

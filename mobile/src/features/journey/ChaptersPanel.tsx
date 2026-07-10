@@ -89,7 +89,7 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
         <View style={styles.intro}>
           <Text style={styles.kicker}>LIFE CHAPTERS</Text>
           <Text style={styles.introTitle}>Give this season a name.</Text>
-          <Text style={styles.introBody}>A chapter is context, not a deadline. It helps Village remember what mattered during this part of your life.</Text>
+          <Text style={styles.introBody}>A chapter is context, not a deadline. It helps Hearth remember what mattered during this part of your life.</Text>
         </View>
       ) : null}
 
@@ -125,7 +125,7 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
       </View>
       {(memories.data ?? []).length === 0 ? (
         <Card>
-          <Text style={styles.cardBody}>No memories saved yet. Village will not decide what is important for you.</Text>
+          <Text style={styles.cardBody}>No memories saved yet. Hearth will not decide what is important for you.</Text>
         </Card>
       ) : (
         (memories.data ?? []).slice(0, 5).map((memory) => <MemoryCard key={memory.id} memory={memory} />)
@@ -250,7 +250,7 @@ function MemoryComposer({ chapter, onCreated }: { chapter: Chapter; onCreated: (
   return (
     <Card>
       <Text style={styles.formTitle}>Keep this moment</Text>
-      <Text style={styles.formHint}>Village stores it because you chose to remember it.</Text>
+      <Text style={styles.formHint}>Hearth stores it because you chose to remember it.</Text>
       <TextInput value={title} onChangeText={setTitle} placeholder="What happened?" style={styles.input} maxLength={140} />
       <TextInput value={description} onChangeText={setDescription} placeholder="A few words for your future self" style={[styles.input, styles.multiline]} multiline maxLength={1200} />
       <View style={styles.choiceWrap}>

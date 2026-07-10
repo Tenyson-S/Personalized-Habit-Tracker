@@ -46,18 +46,18 @@ export function AuthScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.eyebrow}>PROJECT VILLAGE</Text>
-      <Text style={styles.title}>Build your life. Not your screen time.</Text>
+      <Text style={styles.eyebrow}>HEARTH</Text>
+      <Text style={styles.title}>Build your life. Keep returning.</Text>
       <Text style={styles.subtitle}>A quiet place to reflect on the life you are already building.</Text>
 
       <View style={styles.form}>
         {mode === 'register' && (
-          <TextInput value={displayName} onChangeText={setDisplayName} placeholder="What should Village call you?" style={styles.input} />
+          <TextInput value={displayName} onChangeText={setDisplayName} placeholder="What should Hearth call you?" style={styles.input} />
         )}
         <TextInput value={email} onChangeText={setEmail} placeholder="Email" keyboardType="email-address" autoCapitalize="none" style={styles.input} />
         <TextInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry style={styles.input} />
         <Pressable onPress={submit} disabled={loading} style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>{loading ? 'One moment…' : mode === 'login' ? 'Enter Village' : 'Begin quietly'}</Text>
+          <Text style={styles.primaryButtonText}>{loading ? 'One moment…' : mode === 'login' ? 'Enter Hearth' : 'Begin quietly'}</Text>
         </Pressable>
       </View>
 
