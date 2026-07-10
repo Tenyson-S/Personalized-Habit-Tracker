@@ -62,7 +62,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 import urllib.parse
 
-db_uri = os.getenv("POSTGRES_DB_URI")
+db_uri = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_DB_URI")
 if db_uri:
     parsed = urllib.parse.urlparse(db_uri)
     DATABASES = {"default": {
