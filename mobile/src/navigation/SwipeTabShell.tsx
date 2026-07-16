@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, PanResponder, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, PanResponder, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { TodayScreen } from '../features/today/TodayScreen';
 import { VillageScreen } from '../features/village/VillageScreen';
 import { JourneyScreen } from '../features/journey/JourneyScreen';
@@ -18,6 +18,7 @@ const TABS = [
 
 const SWIPE_DISTANCE = 56;
 const SWIPE_VELOCITY = 0.45;
+const nativeDriven = Platform.OS !== 'web';
 
 export function SwipeTabShell() {
   const { width } = useWindowDimensions();
@@ -36,7 +37,7 @@ export function SwipeTabShell() {
     setActiveIndex(index);
     Animated.spring(translateX, {
       toValue: -index * width,
-      useNativeDriver: true,
+      useNativeDriver: nativeDriven,
       friction: 9,
       tension: 85,
     }).start();

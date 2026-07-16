@@ -13,6 +13,19 @@ buildscript {
 }
 
 allprojects {
+  // To avoid Windows MAX_PATH (260 chars) issues, relocate the build directory to a shorter path.
+  if (System.getProperty("os.name").toLowerCase().contains("win")) {
+    def drive = rootDir.absolutePath.substring(0, 2)
+    if (project != rootProject) {
+      project.layout.buildDirectory.set(new File("${drive}/st-build/${project.name}"))
+    }
+    project.afterEvaluate {
+      if (project.hasProperty('android')) {
+        project.android.externalNativeBuild.cmake.buildStagingDirectory = "${drive}/st-build-cxx/${project.name}"
+      }
+    }
+  }
+
   repositories {
     google()
     mavenCentral()

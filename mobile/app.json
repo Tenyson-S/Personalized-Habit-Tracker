@@ -28,6 +28,14 @@
       "eas": {
         "projectId": "cc3de067-6037-4eaa-8c16-9e123a04e395"
       }
+    },
+    "web": {
+      "bundler": "metro",
+      "name": "Stealth Track",
+      "title": "Stealth Track",
+      "description": "Track quietly. Improve consistently.",
+      "themeColor": "#0D0F0E",
+      "backgroundColor": "#0D0F0E"
     }
   }
 }

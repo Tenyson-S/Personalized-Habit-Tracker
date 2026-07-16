@@ -2,12 +2,15 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   DimensionValue,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
+
+const nativeDriven = Platform.OS !== 'web';
 import Svg, {
   Circle,
   Defs,
@@ -472,8 +475,8 @@ function Cloud({ delay = 0, top = 70, opacity = 0.55 }: { delay?: number; top?: 
     const animation = Animated.loop(
       Animated.sequence([
         Animated.delay(delay),
-        Animated.timing(translate, { toValue: 410, duration: 24000, useNativeDriver: true }),
-        Animated.timing(translate, { toValue: -90, duration: 1, useNativeDriver: true }),
+        Animated.timing(translate, { toValue: 410, duration: 24000, useNativeDriver: nativeDriven }),
+        Animated.timing(translate, { toValue: -90, duration: 1, useNativeDriver: nativeDriven }),
       ]),
     );
     animation.start();
@@ -496,8 +499,8 @@ function Fireflies({ visible }: { visible: boolean }) {
     if (!visible) return undefined;
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1400, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.2, duration: 1700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 1400, useNativeDriver: nativeDriven }),
+        Animated.timing(pulse, { toValue: 0.2, duration: 1700, useNativeDriver: nativeDriven }),
       ]),
     );
     animation.start();
