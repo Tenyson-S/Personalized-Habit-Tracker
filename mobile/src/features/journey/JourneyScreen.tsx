@@ -5,7 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { api } from '../../services/api';
-import { colors, spacing } from '../../theme/tokens';
+import { spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 import { StoryPanel } from './StoryPanel';
 import { InsightsPanel } from './InsightsPanel';
 
@@ -39,6 +41,8 @@ function celebrationMark(kind: Celebration['kind']) {
 }
 
 export function JourneyScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   const [period, setPeriod] = useState<Period>('weekly');
   const journey = useQuery({
     queryKey: ['journey', period],
@@ -107,27 +111,27 @@ export function JourneyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   eyebrow: { color: colors.primary, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', fontWeight: '600', marginBottom: 2 },
-  title: { color: colors.ink, fontSize: 34, lineHeight: 38, letterSpacing: -1, fontWeight: '700', marginBottom: 16 },
+  title: { color: colors.text, fontSize: 34, lineHeight: 38, letterSpacing: -1, fontWeight: '700', marginBottom: 16 },
   tabs: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.md, paddingBottom: 8 },
   tab: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 99, borderWidth: 1, borderColor: colors.border },
   tabActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
   tabText: { color: colors.textMuted, fontSize: 13, textTransform: 'capitalize', fontWeight: '600' },
-  tabTextActive: { color: colors.ink, fontSize: 13, fontWeight: '700', textTransform: 'capitalize' },
+  tabTextActive: { color: colors.text, fontSize: 13, fontWeight: '700', textTransform: 'capitalize' },
   metricsRow: { flexDirection: 'row', gap: spacing.sm },
   metricLabel: { color: colors.textMuted, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontWeight: '600' },
-  metricCompact: { color: colors.ink, fontSize: 24, fontWeight: '700', marginTop: 4 },
-  metricSmall: { color: colors.ink, fontSize: 18, fontWeight: '700', marginTop: 4 },
+  metricCompact: { color: colors.text, fontSize: 24, fontWeight: '700', marginTop: 4 },
+  metricSmall: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 4 },
   mutedSmall: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-  sectionTitle: { color: colors.ink, fontSize: 18, fontWeight: '700', marginBottom: 6 },
+  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 6 },
   muted: { color: colors.textMuted, lineHeight: 20 },
-  reflection: { color: colors.ink, fontSize: 16, lineHeight: 24 },
+  reflection: { color: colors.text, fontSize: 16, lineHeight: 24 },
   celebrationMark: { color: colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 1.2, marginBottom: 4 },
-  celebrationTitle: { color: colors.ink, fontSize: 22, lineHeight: 28, fontWeight: '700', marginBottom: 8, letterSpacing: -0.5 },
+  celebrationTitle: { color: colors.text, fontSize: 22, lineHeight: 28, fontWeight: '700', marginBottom: 8, letterSpacing: -0.5 },
   suggestionList: { gap: spacing.sm, marginTop: spacing.md },
   suggestionHeading: { color: colors.primary, fontWeight: '700', textTransform: 'uppercase', fontSize: 10, letterSpacing: 1.2, marginBottom: 4 },
   suggestionItem: { backgroundColor: colors.surfaceMuted, borderRadius: 14, padding: spacing.md, gap: 4 },
-  suggestionName: { color: colors.ink, fontWeight: '700', fontSize: 15 },
+  suggestionName: { color: colors.text, fontWeight: '700', fontSize: 15 },
   footerNote: { color: colors.textMuted, textAlign: 'center', fontStyle: 'italic', marginTop: spacing.md, fontSize: 12 },
 });

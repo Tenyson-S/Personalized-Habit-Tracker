@@ -5,7 +5,9 @@ import { Card } from '../../components/Card';
 import { ProgressBar } from '../../components/ProgressBar';
 import { Screen } from '../../components/Screen';
 import { api } from '../../services/api';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { radius, spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 import type { VillageBuilding, VillageRewardEvent, VillageWorld } from '../../types/api';
 import { VillageWorldScene } from './VillageWorldScene';
 
@@ -34,6 +36,8 @@ function eventPlace(event: VillageRewardEvent, buildings: VillageBuilding[]) {
 }
 
 export function VillageScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   const world = useQuery({
     queryKey: ['village'],
     queryFn: async () => (await api.get<VillageWorld>('/village/')).data,
@@ -102,9 +106,9 @@ export function VillageScreen() {
         </View>
       </View>
 
-      {selectedBuilding && <BuildingStory building={selectedBuilding} />}
+      {selectedBuilding && <BuildingStory building={selectedBuilding} styles={styles} />}
 
-      <QuietProgress world={data} />
+      <QuietProgress world={data} styles={styles} />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionEyebrow}>RECENT TRACES</Text>
@@ -133,7 +137,7 @@ export function VillageScreen() {
   );
 }
 
-function BuildingStory({ building }: { building: VillageBuilding }) {
+function BuildingStory({ building, styles }: { building: VillageBuilding; styles: any }) {
   const progressCopy = building.unlocked
     ? building.xp_to_next_level == null
       ? 'This place has reached its current fullest form.'
@@ -169,7 +173,7 @@ function BuildingStory({ building }: { building: VillageBuilding }) {
   );
 }
 
-function QuietProgress({ world }: { world: VillageWorld }) {
+function QuietProgress({ world, styles }: { world: VillageWorld; styles: any }) {
   return (
     <View style={styles.progressCard}>
       <View style={styles.progressCardTop}>
@@ -198,7 +202,7 @@ function QuietProgress({ world }: { world: VillageWorld }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
   screenContent: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 110, gap: spacing.md },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, paddingHorizontal: 4, paddingTop: 4 },
@@ -218,25 +222,25 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   pressed: { opacity: 0.72 },
-  refreshDot: { width: 7, height: 7, borderRadius: 99, backgroundColor: colors.textMuted },
+  refreshDot: { width: 7, height: 7, borderRadius: 99, backgroundColor: colors.surfaceMuted },
   refreshDotActive: { backgroundColor: colors.primary },
   refreshText: { color: colors.text, fontSize: 11, fontWeight: '700' },
 
   reflectionCard: {
-    backgroundColor: '#F7F1E2',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 24,
     padding: 19,
     borderWidth: 1,
-    borderColor: '#E6DCC7',
+    borderColor: colors.border,
   },
   reflectionTopline: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
-  storyEyebrow: { color: '#6E7F63', fontSize: 10, fontWeight: '800', letterSpacing: 1.45, flex: 1 },
-  rhythmLabel: { color: '#8B846F', fontSize: 10, fontWeight: '700' },
+  storyEyebrow: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.45, flex: 1 },
+  rhythmLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
   reflectionTitle: { color: colors.text, fontSize: 24, lineHeight: 29, fontWeight: '800', letterSpacing: -0.45, marginTop: 10 },
   reflectionMessage: { color: colors.textMuted, fontSize: 15, lineHeight: 23, marginTop: 8 },
   environmentLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
-  environmentDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: '#7E966C' },
-  environmentText: { color: '#556253', fontSize: 12, fontWeight: '700' },
+  environmentDot: { width: 8, height: 8, borderRadius: 99, backgroundColor: colors.primary },
+  environmentText: { color: colors.text, fontSize: 12, fontWeight: '700' },
 
   buildingCard: {
     backgroundColor: colors.surface,
@@ -262,11 +266,11 @@ const styles = StyleSheet.create({
   activityText: { color: colors.textMuted, fontSize: 12 },
 
   progressCard: {
-    backgroundColor: '#E8EBDD',
+    backgroundColor: colors.primarySoft,
     borderRadius: 24,
     padding: 19,
     borderWidth: 1,
-    borderColor: '#D8DDCB',
+    borderColor: colors.border,
     gap: 11,
   },
   progressCardTop: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md },
@@ -274,7 +278,7 @@ const styles = StyleSheet.create({
   progressCardTitle: { color: colors.text, fontSize: 21, fontWeight: '800', marginTop: 4 },
   bigPercent: { color: colors.primary, fontSize: 26, fontWeight: '800' },
   nextDetail: { flexDirection: 'row', alignItems: 'stretch', gap: 11, marginTop: 2 },
-  nextDetailLine: { width: 3, borderRadius: 99, backgroundColor: '#8A9B75' },
+  nextDetailLine: { width: 3, borderRadius: 99, backgroundColor: colors.primary },
   nextDetailTitle: { color: colors.text, fontSize: 13, fontWeight: '800' },
   nextDetailCopy: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
 
@@ -283,7 +287,7 @@ const styles = StyleSheet.create({
   muted: { color: colors.textMuted, lineHeight: 20 },
   traceRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12 },
   traceBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  traceMarker: { width: 9, height: 9, borderRadius: 99, backgroundColor: '#81936F', marginTop: 5 },
+  traceMarker: { width: 9, height: 9, borderRadius: 99, backgroundColor: colors.primary, marginTop: 5 },
   traceCopy: { flex: 1 },
   traceTitle: { color: colors.text, fontWeight: '700', lineHeight: 20 },
   traceMeta: { color: colors.textMuted, fontSize: 11, marginTop: 2 },

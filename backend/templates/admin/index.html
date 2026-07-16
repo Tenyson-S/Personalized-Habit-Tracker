@@ -1,0 +1,28 @@
+{% extends "admin/index.html" %}
+{% load admin_dashboard %}
+
+{% block content %}
+<div id="content-main">
+    {% get_dashboard_stats as stats %}
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
+        <div style="background: white; padding: 20px; border-radius: 8px; flex: 1; min-width: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #666; font-size: 14px; text-transform: uppercase;">Total Users</h3>
+            <p style="font-size: 32px; font-weight: bold; margin: 0; color: #2C3E50;">{{ stats.total_users }}</p>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 8px; flex: 1; min-width: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #666; font-size: 14px; text-transform: uppercase;">New Users (7d)</h3>
+            <p style="font-size: 32px; font-weight: bold; margin: 0; color: #27AE60;">{{ stats.new_users_7d }}</p>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 8px; flex: 1; min-width: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #666; font-size: 14px; text-transform: uppercase;">Active Users (7d)</h3>
+            <p style="font-size: 32px; font-weight: bold; margin: 0; color: #2980B9;">{{ stats.active_users_7d }}</p>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 8px; flex: 1; min-width: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #666; font-size: 14px; text-transform: uppercase;">Total Activities</h3>
+            <p style="font-size: 32px; font-weight: bold; margin: 0; color: #8E44AD;">{{ stats.total_habits|add:stats.total_dailies|add:stats.total_tasks }}</p>
+        </div>
+    </div>
+    
+    {{ block.super }}
+</div>
+{% endblock %}

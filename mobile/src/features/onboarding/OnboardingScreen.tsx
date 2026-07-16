@@ -3,12 +3,14 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Screen } from '../../components/Screen';
 import { api } from '../../services/api';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { radius, spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 
 const improveOptions = ['Learning', 'Health', 'Sleep', 'Career', 'Mindfulness', 'Creativity', 'Relationships', 'Personal Growth'];
 const enjoyOptions = ['Movies', 'Anime', 'Cricket', 'Gaming', 'Drawing', 'Music', 'Going outside', 'Friends', 'Reading for fun'];
 
-function ChoiceGroup({ title, subtitle, options, selected, toggle }: { title: string; subtitle: string; options: string[]; selected: string[]; toggle: (item: string) => void }) {
+function ChoiceGroup({ title, subtitle, options, selected, toggle, styles }: { title: string; subtitle: string; options: string[]; selected: string[]; toggle: (item: string) => void; styles: any }) {
   return (
     <View style={{ gap: spacing.sm }}>
       <Text style={styles.heading}>{title}</Text>
@@ -28,6 +30,8 @@ function ChoiceGroup({ title, subtitle, options, selected, toggle }: { title: st
 }
 
 export function OnboardingScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   const queryClient = useQueryClient();
   const [improve, setImprove] = useState<string[]>([]);
   const [enjoy, setEnjoy] = useState<string[]>([]);
@@ -51,8 +55,8 @@ export function OnboardingScreen() {
     <Screen>
       <Text style={styles.eyebrow}>WELCOME TO VILLAGE</Text>
       <Text style={styles.title}>Tell us what matters. You stay in charge.</Text>
-      <ChoiceGroup title="What would you like to care for?" subtitle="Choose any areas you want to notice more clearly." options={improveOptions} selected={improve} toggle={(item) => toggle(item, improve, setImprove)} />
-      <ChoiceGroup title="What makes life enjoyable?" subtitle="Hearth may quietly remind you of these after meaningful periods." options={enjoyOptions} selected={enjoy} toggle={(item) => toggle(item, enjoy, setEnjoy)} />
+      <ChoiceGroup title="What would you like to care for?" subtitle="Choose any areas you want to notice more clearly." options={improveOptions} selected={improve} toggle={(item) => toggle(item, improve, setImprove)} styles={styles} />
+      <ChoiceGroup title="What makes life enjoyable?" subtitle="Hearth may quietly remind you of these after meaningful periods." options={enjoyOptions} selected={enjoy} toggle={(item) => toggle(item, enjoy, setEnjoy)} styles={styles} />
       <Pressable onPress={() => save.mutate()} disabled={save.isPending} style={styles.button}>
         <Text style={styles.buttonText}>{save.isPending ? 'Saving…' : 'Begin my journey'}</Text>
       </Pressable>
@@ -61,7 +65,7 @@ export function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   eyebrow: { color: colors.primary, fontWeight: '700', letterSpacing: 1.5 },
   title: { color: colors.text, fontSize: 30, lineHeight: 36, fontWeight: '700' },
   heading: { color: colors.text, fontSize: 20, fontWeight: '700' },

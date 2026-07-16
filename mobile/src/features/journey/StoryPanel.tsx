@@ -4,7 +4,9 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../components/Card';
 import { api } from '../../services/api';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { radius, spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 import type {
   CelebrationPreference,
   CelebrationPreferenceCategory,
@@ -40,6 +42,8 @@ function stageLabel(value: string) {
 }
 
 export function StoryPanel() {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   const queryClient = useQueryClient();
   const [memoryDraft, setMemoryDraft] = useState<string | null>(null);
 
@@ -89,13 +93,13 @@ export function StoryPanel() {
       </View>
 
       {weekly.data ? (
-        <CelebrationCard reflection={weekly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} />
+        <CelebrationCard reflection={weekly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} styles={styles} />
       ) : (
         <Card><Text style={styles.muted}>Add something you enjoy below. Hearth will only reflect back choices that came from you.</Text></Card>
       )}
 
       {monthly.data ? (
-        <CelebrationCard reflection={monthly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} />
+        <CelebrationCard reflection={monthly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} styles={styles} />
       ) : null}
 
       {memoryDraft ? (
@@ -111,6 +115,8 @@ export function StoryPanel() {
               queryClient.invalidateQueries({ queryKey: ['chapter-current'] }),
             ]);
           }}
+          styles={styles}
+          colors={colors}
         />
       ) : null}
 
@@ -120,13 +126,13 @@ export function StoryPanel() {
         <Text style={styles.kicker}>WORLD HISTORY</Text>
         <Text style={styles.sectionTitle}>How the village changed through your life</Text>
       </View>
-      <WorldHistoryTimeline snapshots={history.data ?? []} />
+      <WorldHistoryTimeline snapshots={history.data ?? []} styles={styles} />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.kicker}>YOUR REFLECTION CONTROLS</Text>
         <Text style={styles.sectionTitle}>Keep this mirror current</Text>
       </View>
-      <PreferenceManager preferences={preferences.data ?? []} onChanged={refreshCelebrations} />
+      <PreferenceManager preferences={preferences.data ?? []} onChanged={refreshCelebrations} styles={styles} colors={colors} />
     </View>
   );
 }
@@ -135,10 +141,12 @@ function CelebrationCard({
   reflection,
   onChanged,
   onRemember,
+  styles,
 }: {
   reflection: CelebrationReflection;
   onChanged: () => Promise<void>;
   onRemember: (title: string) => void;
+  styles: any;
 }) {
   const respond = useMutation({
     mutationFn: async ({ status, deactivate = false }: { status: 'MAYBE_LATER' | 'COMPLETED' | 'DISMISSED'; deactivate?: boolean }) => (
@@ -201,11 +209,15 @@ function CelebrationMemoryComposer({
   chapter,
   onCancel,
   onCreated,
+  styles,
+  colors,
 }: {
   initialTitle: string;
   chapter: Chapter | null;
   onCancel: () => void;
   onCreated: () => Promise<void>;
+  styles: any;
+  colors: ThemeColors;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState('');
@@ -227,8 +239,8 @@ function CelebrationMemoryComposer({
     <Card>
       <Text style={styles.formTitle}>Keep it only if it matters to you</Text>
       <Text style={styles.muted}>This happened outside the app. Saving it remains your choice.</Text>
-      <TextInput value={title} onChangeText={setTitle} style={styles.input} maxLength={140} placeholder="What do you want to call this memory?" />
-      <TextInput value={description} onChangeText={setDescription} style={[styles.input, styles.multiline]} multiline maxLength={1200} placeholder="A few words for your future self" />
+      <TextInput value={title} onChangeText={setTitle} style={styles.input} maxLength={140} placeholder="What do you want to call this memory?" placeholderTextColor={colors.textMuted} />
+      <TextInput value={description} onChangeText={setDescription} style={[styles.input, styles.multiline]} multiline maxLength={1200} placeholder="A few words for your future self" placeholderTextColor={colors.textMuted} />
       <View style={styles.choiceWrap}>
         {(['MOMENT', 'EXPERIENCE', 'PEOPLE'] as MemoryType[]).map((item) => (
           <Pressable key={item} onPress={() => setType(item)} style={[styles.choiceChip, type === item && styles.choiceChipActive]}>
@@ -246,7 +258,7 @@ function CelebrationMemoryComposer({
   );
 }
 
-function WorldHistoryTimeline({ snapshots }: { snapshots: WorldSnapshot[] }) {
+function WorldHistoryTimeline({ snapshots, styles }: { snapshots: WorldSnapshot[]; styles: any }) {
   if (snapshots.length === 0) {
     return (
       <Card>
@@ -284,7 +296,7 @@ function WorldHistoryTimeline({ snapshots }: { snapshots: WorldSnapshot[] }) {
   );
 }
 
-function PreferenceManager({ preferences, onChanged }: { preferences: CelebrationPreference[]; onChanged: () => Promise<void> }) {
+function PreferenceManager({ preferences, onChanged, styles, colors }: { preferences: CelebrationPreference[]; onChanged: () => Promise<void>; styles: any; colors: ThemeColors }) {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<CelebrationPreferenceCategory>('SMALL_JOY');
@@ -326,7 +338,7 @@ function PreferenceManager({ preferences, onChanged }: { preferences: Celebratio
         <Pressable style={styles.softButtonWide} onPress={() => setShowForm(true)}><Text style={styles.softButtonText}>Add something I enjoy</Text></Pressable>
       ) : (
         <View style={styles.preferenceForm}>
-          <TextInput value={title} onChangeText={setTitle} style={styles.input} maxLength={100} placeholder="Example: Long drives" />
+          <TextInput value={title} onChangeText={setTitle} style={styles.input} maxLength={100} placeholder="Example: Long drives" placeholderTextColor={colors.textMuted} />
           <View style={styles.choiceWrap}>
             {CATEGORIES.map((item) => (
               <Pressable key={item.key} onPress={() => setCategory(item.key)} style={[styles.choiceChip, category === item.key && styles.choiceChipActive]}>
@@ -346,7 +358,7 @@ function PreferenceManager({ preferences, onChanged }: { preferences: Celebratio
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { gap: spacing.md },
   intro: { gap: 6, paddingVertical: 4 },
   kicker: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.7 },
@@ -356,11 +368,11 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.text, fontSize: 21, lineHeight: 26, fontWeight: '800' },
   muted: { color: colors.textMuted, lineHeight: 21 },
   celebrationCard: { borderRadius: 24, borderWidth: 1, padding: 20, gap: 12 },
-  weeklyCard: { backgroundColor: '#F3F5EC', borderColor: '#D8DECF' },
-  monthlyCard: { backgroundColor: '#F4EFE6', borderColor: '#E1D8C8' },
+  weeklyCard: { backgroundColor: colors.surfaceMuted, borderColor: colors.border },
+  monthlyCard: { backgroundColor: colors.surface, borderColor: colors.border },
   celebrationTopline: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
   currentEyebrow: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  categoryBadge: { color: colors.textMuted, fontSize: 10, backgroundColor: 'rgba(255,255,255,0.7)', paddingHorizontal: 9, paddingVertical: 6, borderRadius: 999 },
+  categoryBadge: { color: colors.textMuted, fontSize: 10, backgroundColor: colors.background, paddingHorizontal: 9, paddingVertical: 6, borderRadius: 999 },
   celebrationTitle: { color: colors.text, fontSize: 23, lineHeight: 29, fontWeight: '800' },
   celebrationBody: { color: colors.text, fontSize: 16, lineHeight: 23 },
   buttonRow: { flexDirection: 'row', gap: 9, flexWrap: 'wrap', alignItems: 'center' },

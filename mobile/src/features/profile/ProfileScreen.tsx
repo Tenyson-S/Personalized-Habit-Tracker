@@ -1,15 +1,33 @@
 import React from 'react';
-import { Alert, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View, ScrollView } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card } from '../../components/Card';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Screen } from '../../components/Screen';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { radius, spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 import type { User } from '../../types/api';
+import type { ProfileStackParamList } from './ProfileNavigator';
+
+type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'ProfileHub'>;
+
+function SettingsRow({ title, onPress, destructive, styles, colors }: { title: string; onPress: () => void; destructive?: boolean; styles: any; colors: ThemeColors }) {
+  return (
+    <Pressable onPress={onPress} style={styles.row}>
+      <Text style={[styles.rowTitle, destructive && { color: colors.danger }]}>{title}</Text>
+      <Text style={styles.chevron}>→</Text>
+    </Pressable>
+  );
+}
 
 export function ProfileScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   const queryClient = useQueryClient();
+  const navigation = useNavigation<NavigationProp>();
   const signOut = useAuthStore((state) => state.signOut);
   const me = useQuery({ queryKey: ['me'], queryFn: async () => (await api.get<User>('/me/')).data });
 
@@ -18,39 +36,87 @@ export function ProfileScreen() {
       const refresh = useAuthStore.getState().tokens?.refresh;
       if (refresh) await api.post('/auth/logout/', { refresh });
     } catch {
-      // Local sign-out still proceeds; an expired refresh token should not trap the user.
+      // Local sign-out proceeds
     }
     await signOut();
     queryClient.clear();
   }
 
+  async function confirmDelete() {
+    Alert.alert(
+      'Delete Account?',
+      'This will permanently delete your profile, habits, tasks, and history. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete Account', style: 'destructive', onPress: () => console.log('Delete flow not implemented yet') },
+      ]
+    );
+  }
+
   return (
-    <Screen>
-      <Text style={styles.eyebrow}>YOU</Text>
-      <Text style={styles.title}>Your life stays yours.</Text>
-      <Card>
+    <Screen contentStyle={styles.scroll}>
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{me.data?.display_name?.slice(0, 2).toUpperCase() || 'ME'}</Text>
+        </View>
         <Text style={styles.name}>{me.data?.display_name || 'Hearth resident'}</Text>
-        <Text style={styles.muted}>{me.data?.email}</Text>
-        <Text style={styles.muted}>Timezone: {me.data?.timezone}</Text>
-      </Card>
-      <Card>
-        <Text style={styles.sectionTitle}>Product promise</Text>
-        <Text style={styles.body}>Hearth reflects your effort, joy, rest, and growth. It will not rank you against strangers or decide how you should live.</Text>
-      </Card>
-      <Pressable onPress={() => Alert.alert('Leave Hearth?', 'You can return whenever you like.', [{ text: 'Stay', style: 'cancel' }, { text: 'Sign out', onPress: logout }])} style={styles.button}>
-        <Text style={styles.buttonText}>Sign out</Text>
-      </Pressable>
+        <Text style={styles.occupation}>{me.data?.profile?.occupation || 'No occupation set'}</Text>
+        <Text style={styles.email}>{me.data?.email}</Text>
+        
+        <Pressable onPress={() => navigation.navigate('EditProfile')} style={styles.editButton}>
+          <Text style={styles.editButtonText}>Edit Profile</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionHeader}>PERSONALIZATION</Text>
+        <View style={styles.card}>
+          <SettingsRow title="Life areas & interests" onPress={() => navigation.navigate('EditInterests')} styles={styles} colors={colors} />
+          <SettingsRow title="Sleep schedule" onPress={() => navigation.navigate('EditProfile')} styles={styles} colors={colors} />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionHeader}>PREFERENCES</Text>
+        <View style={styles.card}>
+          <SettingsRow title="Notifications & Appearance" onPress={() => navigation.navigate('Settings')} styles={styles} colors={colors} />
+          <SettingsRow title="App guide" onPress={() => Alert.alert('Guide', 'Opening guide...')} styles={styles} colors={colors} />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionHeader}>SECURITY</Text>
+        <View style={styles.card}>
+          <SettingsRow title="Change password" onPress={() => navigation.navigate('ChangePassword')} styles={styles} colors={colors} />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionHeader}>ACCOUNT</Text>
+        <View style={styles.card}>
+          <SettingsRow title="Sign out" onPress={() => Alert.alert('Sign out?', 'You can return whenever you like.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign out', onPress: logout }])} styles={styles} colors={colors} />
+          <SettingsRow title="Delete account" destructive onPress={confirmDelete} styles={styles} colors={colors} />
+        </View>
+      </View>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  eyebrow: { color: colors.primary, fontWeight: '700', letterSpacing: 1.5 },
-  title: { color: colors.text, fontSize: 30, lineHeight: 36, fontWeight: '700' },
-  name: { color: colors.text, fontSize: 24, fontWeight: '700' },
-  muted: { color: colors.textMuted },
-  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
-  body: { color: colors.text, lineHeight: 23 },
-  button: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
-  buttonText: { color: colors.textMuted, fontWeight: '700' },
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
+  scroll: { padding: spacing.lg, paddingBottom: 100 },
+  header: { alignItems: 'center', marginBottom: spacing.xl, marginTop: spacing.xl },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
+  avatarText: { fontSize: 28, fontWeight: '800', color: colors.primary, letterSpacing: 1 },
+  name: { color: colors.text, fontSize: 24, fontWeight: '700', marginBottom: 4 },
+  occupation: { color: colors.textPrimary, fontSize: 16, marginBottom: 2 },
+  email: { color: colors.textMuted, fontSize: 14, marginBottom: spacing.lg },
+  editButton: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.xl, paddingVertical: 10, borderRadius: 99 },
+  editButtonText: { color: colors.text, fontWeight: '600', fontSize: 14 },
+  
+  section: { marginBottom: spacing.xl },
+  sectionHeader: { color: colors.textMuted, fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: spacing.sm, marginLeft: spacing.sm },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  rowTitle: { color: colors.text, fontSize: 16, fontWeight: '500' },
+  chevron: { color: colors.textMuted, fontSize: 18 },
 });

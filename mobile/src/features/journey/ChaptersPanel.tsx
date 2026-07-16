@@ -3,7 +3,9 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../components/Card';
 import { api } from '../../services/api';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { radius, spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 import type { Chapter, LifeArea, Memory, MemoryType } from '../../types/api';
 
 const LIFE_AREAS: { key: LifeArea; label: string }[] = [
@@ -38,7 +40,7 @@ function sleepText(minutes: number | null) {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
-function Stat({ value, label }: { value: string | number; label: string }) {
+function Stat({ value, label, styles }: { value: string | number; label: string; styles: any }) {
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>
@@ -48,6 +50,8 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 }
 
 export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
@@ -99,8 +103,10 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
             chapter={current.data}
             onAddMemory={() => setShowMemory((value) => !value)}
             onClosed={refreshStory}
+            styles={styles}
+            colors={colors}
           />
-          {showMemory && <MemoryComposer chapter={current.data} onCreated={async () => { setShowMemory(false); await refreshStory(); }} />}
+          {showMemory && <MemoryComposer chapter={current.data} onCreated={async () => { setShowMemory(false); await refreshStory(); }} styles={styles} colors={colors} />}
         </>
       ) : (
         <>
@@ -114,7 +120,7 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
               </Pressable>
             </View>
           ) : (
-            <ChapterComposer onCreated={async () => { setShowCreate(false); await refreshStory(); }} onCancel={() => setShowCreate(false)} />
+            <ChapterComposer onCreated={async () => { setShowCreate(false); await refreshStory(); }} onCancel={() => setShowCreate(false)} styles={styles} colors={colors} />
           )}
         </>
       )}
@@ -128,7 +134,7 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
           <Text style={styles.cardBody}>No memories saved yet. Hearth will not decide what is important for you.</Text>
         </Card>
       ) : (
-        (memories.data ?? []).slice(0, 5).map((memory) => <MemoryCard key={memory.id} memory={memory} />)
+        (memories.data ?? []).slice(0, 5).map((memory) => <MemoryCard key={memory.id} memory={memory} styles={styles} />)
       )}
 
       <View style={styles.sectionHeader}>
@@ -138,13 +144,13 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
       {closedChapters.length === 0 ? (
         <Card><Text style={styles.cardBody}>Closed chapters will become a quiet archive here.</Text></Card>
       ) : (
-        closedChapters.map((chapter) => <ClosedChapterCard key={chapter.id} chapter={chapter} />)
+        closedChapters.map((chapter) => <ClosedChapterCard key={chapter.id} chapter={chapter} styles={styles} colors={colors} />)
       )}
     </View>
   );
 }
 
-function CurrentChapterCard({ chapter, onAddMemory, onClosed }: { chapter: Chapter; onAddMemory: () => void; onClosed: () => Promise<void> }) {
+function CurrentChapterCard({ chapter, onAddMemory, onClosed, styles, colors }: { chapter: Chapter; onAddMemory: () => void; onClosed: () => Promise<void>; styles: any; colors: ThemeColors }) {
   const closeChapter = useMutation({
     mutationFn: async () => (await api.post<Chapter>(`/chapters/${chapter.id}/close/`, {})).data,
     onSuccess: onClosed,
@@ -174,9 +180,9 @@ function CurrentChapterCard({ chapter, onAddMemory, onClosed }: { chapter: Chapt
         {chapter.focuses.map((focus) => <View key={focus.id} style={styles.focusChip}><Text style={styles.focusChipText}>{focus.life_area_label}</Text></View>)}
       </View>
       <View style={styles.statsRow}>
-        <Stat value={chapter.retrospective.active_days} label="active days" />
-        <Stat value={chapter.retrospective.tasks_completed} label="tasks" />
-        <Stat value={chapter.retrospective.memories_saved} label="memories" />
+        <Stat value={chapter.retrospective.active_days} label="active days" styles={styles} />
+        <Stat value={chapter.retrospective.tasks_completed} label="tasks" styles={styles} />
+        <Stat value={chapter.retrospective.memories_saved} label="memories" styles={styles} />
       </View>
       <View style={styles.buttonRow}>
         <Pressable style={styles.primaryButtonSmall} onPress={onAddMemory}><Text style={styles.primaryButtonText}>Save a memory</Text></Pressable>
@@ -186,7 +192,7 @@ function CurrentChapterCard({ chapter, onAddMemory, onClosed }: { chapter: Chapt
   );
 }
 
-function ChapterComposer({ onCreated, onCancel }: { onCreated: () => Promise<void>; onCancel: () => void }) {
+function ChapterComposer({ onCreated, onCancel, styles, colors }: { onCreated: () => Promise<void>; onCancel: () => void; styles: any; colors: ThemeColors }) {
   const [title, setTitle] = useState('');
   const [intention, setIntention] = useState('');
   const [areas, setAreas] = useState<LifeArea[]>([]);
@@ -210,8 +216,8 @@ function ChapterComposer({ onCreated, onCancel }: { onCreated: () => Promise<voi
     <Card>
       <Text style={styles.formTitle}>Begin a chapter</Text>
       <Text style={styles.formHint}>Name the part of life you are already living.</Text>
-      <TextInput value={title} onChangeText={setTitle} placeholder="Example: Becoming job ready" style={styles.input} maxLength={120} />
-      <TextInput value={intention} onChangeText={setIntention} placeholder="What do you hope this chapter becomes?" style={[styles.input, styles.multiline]} multiline maxLength={500} />
+      <TextInput value={title} onChangeText={setTitle} placeholder="Example: Becoming job ready" placeholderTextColor={colors.textMuted} style={styles.input} maxLength={120} />
+      <TextInput value={intention} onChangeText={setIntention} placeholder="What do you hope this chapter becomes?" placeholderTextColor={colors.textMuted} style={[styles.input, styles.multiline]} multiline maxLength={500} />
       <Text style={styles.fieldLabel}>WHAT MATTERS IN THIS CHAPTER</Text>
       <View style={styles.choiceWrap}>
         {LIFE_AREAS.map((item) => (
@@ -230,7 +236,7 @@ function ChapterComposer({ onCreated, onCancel }: { onCreated: () => Promise<voi
   );
 }
 
-function MemoryComposer({ chapter, onCreated }: { chapter: Chapter; onCreated: () => Promise<void> }) {
+function MemoryComposer({ chapter, onCreated, styles, colors }: { chapter: Chapter; onCreated: () => Promise<void>; styles: any; colors: ThemeColors }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<MemoryType>('MOMENT');
@@ -251,8 +257,8 @@ function MemoryComposer({ chapter, onCreated }: { chapter: Chapter; onCreated: (
     <Card>
       <Text style={styles.formTitle}>Keep this moment</Text>
       <Text style={styles.formHint}>Hearth stores it because you chose to remember it.</Text>
-      <TextInput value={title} onChangeText={setTitle} placeholder="What happened?" style={styles.input} maxLength={140} />
-      <TextInput value={description} onChangeText={setDescription} placeholder="A few words for your future self" style={[styles.input, styles.multiline]} multiline maxLength={1200} />
+      <TextInput value={title} onChangeText={setTitle} placeholder="What happened?" placeholderTextColor={colors.textMuted} style={styles.input} maxLength={140} />
+      <TextInput value={description} onChangeText={setDescription} placeholder="A few words for your future self" placeholderTextColor={colors.textMuted} style={[styles.input, styles.multiline]} multiline maxLength={1200} />
       <View style={styles.choiceWrap}>
         {MEMORY_TYPES.map((item) => (
           <Pressable key={item.key} onPress={() => setType(item.key)} style={[styles.choiceChip, type === item.key && styles.choiceChipActive]}>
@@ -267,7 +273,7 @@ function MemoryComposer({ chapter, onCreated }: { chapter: Chapter; onCreated: (
   );
 }
 
-function MemoryCard({ memory }: { memory: Memory }) {
+function MemoryCard({ memory, styles }: { memory: Memory; styles: any }) {
   return (
     <View style={styles.memoryCard}>
       <View style={styles.memoryLine} />
@@ -284,7 +290,7 @@ function MemoryCard({ memory }: { memory: Memory }) {
   );
 }
 
-function ClosedChapterCard({ chapter }: { chapter: Chapter }) {
+function ClosedChapterCard({ chapter, styles, colors }: { chapter: Chapter; styles: any; colors: ThemeColors }) {
   return (
     <View style={styles.closedCard}>
       <View style={styles.closedTopline}>
@@ -304,23 +310,23 @@ function ClosedChapterCard({ chapter }: { chapter: Chapter }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { gap: spacing.md },
   intro: { gap: 6, paddingVertical: 4 },
   kicker: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.7 },
   introTitle: { color: colors.text, fontSize: 24, lineHeight: 29, fontWeight: '800', letterSpacing: -0.4 },
   introBody: { color: colors.textMuted, lineHeight: 21 },
-  currentCard: { backgroundColor: '#E7EBDD', borderRadius: 26, borderWidth: 1, borderColor: '#D4DBC9', padding: 20, gap: 14 },
+  currentCard: { backgroundColor: colors.surface, borderRadius: 26, borderWidth: 1, borderColor: colors.primary, padding: 20, gap: 14 },
   currentTopline: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   currentEyebrow: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
-  dayBadge: { color: colors.primary, backgroundColor: '#F7F8F1', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, fontSize: 11, fontWeight: '800' },
+  dayBadge: { color: colors.primary, backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, fontSize: 11, fontWeight: '800' },
   currentTitle: { color: colors.text, fontSize: 28, lineHeight: 33, fontWeight: '800', letterSpacing: -0.6 },
-  currentIntention: { color: '#536052', fontSize: 16, lineHeight: 23, fontStyle: 'italic' },
+  currentIntention: { color: colors.textSecondary, fontSize: 16, lineHeight: 23, fontStyle: 'italic' },
   focusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  focusChip: { backgroundColor: '#F8F8F2', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1, borderColor: '#D8DECF' },
+  focusChip: { backgroundColor: colors.background, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1, borderColor: colors.border },
   focusChipText: { color: colors.text, fontSize: 11, fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 8 },
-  stat: { flex: 1, backgroundColor: 'rgba(255,255,255,0.58)', borderRadius: 16, padding: 12, minHeight: 74 },
+  stat: { flex: 1, backgroundColor: colors.background, borderRadius: 16, padding: 12, minHeight: 74 },
   statValue: { color: colors.text, fontSize: 22, fontWeight: '800' },
   statLabel: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
   buttonRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
@@ -347,7 +353,7 @@ const styles = StyleSheet.create({
   sectionTitle: { color: colors.text, fontSize: 21, lineHeight: 26, fontWeight: '800' },
   cardBody: { color: colors.textMuted, lineHeight: 21 },
   memoryCard: { flexDirection: 'row', gap: 13, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 17 },
-  memoryLine: { width: 3, borderRadius: 99, backgroundColor: '#8A9B75' },
+  memoryLine: { width: 3, borderRadius: 99, backgroundColor: colors.primary },
   memoryTopline: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
   memoryType: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase' },
   memoryDate: { color: colors.textMuted, fontSize: 10 },

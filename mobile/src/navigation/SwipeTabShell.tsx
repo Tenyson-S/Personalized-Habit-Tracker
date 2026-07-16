@@ -3,7 +3,7 @@ import { Animated, PanResponder, Platform, Pressable, StyleSheet, Text, useWindo
 import { TodayScreen } from '../features/today/TodayScreen';
 import { VillageScreen } from '../features/village/VillageScreen';
 import { JourneyScreen } from '../features/journey/JourneyScreen';
-import { ProfileScreen } from '../features/profile/ProfileScreen';
+import { ProfileNavigator } from '../features/profile/ProfileNavigator';
 import { ActivityComposer } from '../features/today/ActivityComposer';
 import { useComposerStore } from '../store/composerStore';
 import { colors } from '../theme/tokens';
@@ -13,7 +13,7 @@ const TABS = [
   { name: 'Today', component: TodayScreen },
   { name: 'Village', component: VillageScreen },
   { name: 'Journey', component: JourneyScreen },
-  { name: 'You', component: ProfileScreen },
+  { name: 'You', component: ProfileNavigator },
 ] as const;
 
 const SWIPE_DISTANCE = 56;
@@ -83,7 +83,7 @@ export function SwipeTabShell() {
       <View style={styles.nav}>
         {TABS.map((tab, index) => {
           const active = index === activeIndex;
-          const color = active ? colors.ink : colors.textMuted;
+          const color = active ? colors.textPrimary : colors.textMuted;
           const tabButton = (
             <Pressable key={tab.name} onPress={() => goTo(index)} style={styles.navItem} accessibilityRole="tab" accessibilityState={{ selected: active }}>
               <TabIcon name={tab.name} color={color} focused={active} />
@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
   nav: { height: 76, flexDirection: 'row', backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 5 },
   navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
   navItemAdd: { flex: 1.2, alignItems: 'center', justifyContent: 'center', marginTop: -15 },
-  addCircle: { width: 50, height: 50, borderRadius: 99, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-  addText: { color: 'white', fontSize: 32, fontWeight: '300', lineHeight: 34 },
+  addCircle: { width: 50, height: 50, borderRadius: 99, backgroundColor: colors.textPrimary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+  addText: { color: 'white', fontSize: 32, lineHeight: 36, textAlign: 'center' },
   label: { color: colors.textMuted, fontSize: 10, fontWeight: '600' },
-  labelActive: { color: colors.ink, fontWeight: '800' },
+  labelActive: { color: colors.textPrimary, fontWeight: '800' },
   indicator: { width: 20, height: 2, borderRadius: 99, backgroundColor: 'transparent', marginTop: 2 },
-  indicatorActive: { backgroundColor: colors.ink },
+  indicatorActive: { backgroundColor: colors.textPrimary },
 });

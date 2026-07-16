@@ -6,6 +6,11 @@ import { api } from '../../services/api';
 import { scheduleRecurringTaskReminder, scheduleStartReminder, scheduleWeeklyActivityReminders } from '../../services/reminders';
 import { useComposerStore } from '../../store/composerStore';
 import { colors, radius, spacing } from '../../theme/tokens';
+import { AppText, AppButton, AppInput } from '../../components/ui';
+import { DatePickerField } from '../../components/forms/DatePickerField';
+import { TimePickerField } from '../../components/forms/TimePickerField';
+import { extractLocalDateForApi, extractLocalTimeForApi } from '../../utils/date';
+import { addHours } from 'date-fns';
 
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
 const DAY_LABELS = ['M','T','W','T','F','S','S'];
@@ -30,12 +35,13 @@ export function ActivityComposer(){
  };
  const [kind,setKind]=useState<Kind>('habit'); const [title,setTitle]=useState(''); const [description,setDescription]=useState('');
  const [originType,setOriginType]=useState<'NEW'|'EXISTING'>('NEW');
- const [days,setDays]=useState<Record<string,boolean>>(Object.fromEntries(DAYS.map(d=>[d,true]))); const [time,setTime]=useState('08:00');
- const [startDate,setStartDate]=useState(new Date().toISOString().slice(0,10)); const [dueDate,setDueDate]=useState(new Date().toISOString().slice(0,10));
- const [dueTime,setDueTime]=useState('18:00'); const [recurring,setRecurring]=useState(false); const [frequency,setFrequency]=useState<'DAILY'|'WEEKLY'|'MONTHLY'>('WEEKLY'); const [saving,setSaving]=useState(false);
+ const [days,setDays]=useState<Record<string,boolean>>(Object.fromEntries(DAYS.map(d=>[d,true]))); 
+ const [time,setTime]=useState(extractLocalTimeForApi(new Date()).slice(0,5));
+ const [startDate,setStartDate]=useState(extractLocalDateForApi(new Date())); 
+ const [dueDate,setDueDate]=useState(extractLocalDateForApi(new Date()));
+ const [dueTime,setDueTime]=useState(''); 
+ const [recurring,setRecurring]=useState(false); const [frequency,setFrequency]=useState<'DAILY'|'WEEKLY'|'MONTHLY'>('WEEKLY'); const [saving,setSaving]=useState(false);
  const [scheduleMode,setScheduleMode]=useState<'SELECTED_DAYS'|'WEEKLY_TARGET'>('SELECTED_DAYS'); const [targetPerWeek,setTargetPerWeek]=useState('5');
- const [showStart, setShowStart]=useState<"date"|"time"|null>(null);
- const [showDue, setShowDue]=useState<"date"|"time"|null>(null);
  const schedule=useMemo(()=>Object.fromEntries(DAYS.map(d=>[d,Boolean(days[d])])),[days]);
 
  useEffect(() => {
@@ -64,7 +70,7 @@ export function ActivityComposer(){
     }
   }, [visible, initialData]);
 
- function reset(){setKind('habit');setTitle('');setDescription('');setRecurring(false);setOriginType('NEW');}
+ function reset(){setKind('habit');setTitle('');setDescription('');setRecurring(false);setOriginType('NEW');setTime(extractLocalTimeForApi(new Date()).slice(0,5));setStartDate(extractLocalDateForApi(new Date()));setDueDate(extractLocalDateForApi(new Date()));setDueTime('');}
  async function save(){
   if(!title.trim()) return; setSaving(true);
   try{
@@ -115,33 +121,24 @@ export function ActivityComposer(){
       <Text style={styles.foundationBody}>{originType==='NEW'?'A scheduled check-in moves the counter forward. Missing a day does not erase the foundation, and random off-schedule activity does not count.':'Hearth will not pretend your earlier effort never happened. This habit starts established.'}</Text>
     </View>
   </>:null}
-  <Text style={styles.label}>Name</Text><TextInput value={title} onChangeText={setTitle} placeholder={kind==='habit'?'Example: Read regularly':kind==='daily'?'Example: Review tomorrow’s plan':'Example: Finish portfolio API'} style={styles.input}/>
-  <Text style={styles.label}>Description (optional)</Text><TextInput value={description} onChangeText={setDescription} multiline style={[styles.input,{minHeight:70}]}/>
-  {kind!=='task'?<><Text style={styles.label}>Schedule</Text><View style={styles.segments}><Pressable onPress={()=>setScheduleMode('SELECTED_DAYS')} style={[styles.segment,scheduleMode==='SELECTED_DAYS'&&styles.active]}><Text style={scheduleMode==='SELECTED_DAYS'?styles.activeText:styles.muted}>Selected days</Text></Pressable>{kind==='habit'?<Pressable onPress={()=>setScheduleMode('WEEKLY_TARGET')} style={[styles.segment,scheduleMode==='WEEKLY_TARGET'&&styles.active]}><Text style={scheduleMode==='WEEKLY_TARGET'?styles.activeText:styles.muted}>Days per week</Text></Pressable>:null}</View>{scheduleMode==='WEEKLY_TARGET'&&kind==='habit'?<TextInput value={targetPerWeek} onChangeText={setTargetPerWeek} keyboardType="number-pad" style={styles.input}/>:<View style={styles.days}>{DAYS.map((d,i)=><Pressable key={d} onPress={()=>setDays({...days,[d]:!days[d]})} style={[styles.day,days[d]&&styles.dayActive]}><Text>{DAY_LABELS[i]}</Text></Pressable>)}</View>}</>:null}
-  <Text style={styles.label}>{kind==='task'?'Starts':'Preferred time'}</Text>
+  <AppInput label="Name" value={title} onChangeText={setTitle} placeholder={kind==='habit'?'Example: Read regularly':kind==='daily'?'Example: Review tomorrow’s plan':'Example: Finish portfolio API'} />
+  <AppInput label="Description (optional)" value={description} onChangeText={setDescription} multiline style={{minHeight:70}} />
+  {kind!=='task'?<><AppText variant="bodySm" weight="semiBold" style={styles.label}>Schedule</AppText><View style={styles.segments}><Pressable onPress={()=>setScheduleMode('SELECTED_DAYS')} style={[styles.segment,scheduleMode==='SELECTED_DAYS'&&styles.active]}><Text style={scheduleMode==='SELECTED_DAYS'?styles.activeText:styles.muted}>Selected days</Text></Pressable>{kind==='habit'?<Pressable onPress={()=>setScheduleMode('WEEKLY_TARGET')} style={[styles.segment,scheduleMode==='WEEKLY_TARGET'&&styles.active]}><Text style={scheduleMode==='WEEKLY_TARGET'?styles.activeText:styles.muted}>Days per week</Text></Pressable>:null}</View>{scheduleMode==='WEEKLY_TARGET'&&kind==='habit'?<AppInput value={targetPerWeek} onChangeText={setTargetPerWeek} keyboardType="number-pad" />:<View style={styles.days}>{DAYS.map((d,i)=><Pressable key={d} onPress={()=>setDays({...days,[d]:!days[d]})} style={[styles.day,days[d]&&styles.dayActive]}><Text>{DAY_LABELS[i]}</Text></Pressable>)}</View>}</>:null}
+  
   <View style={styles.inline}>
-    <Pressable onPress={() => setShowStart('date')} style={[styles.input, {flex: 1}]}><Text style={{color:colors.text}}>{startDate}</Text></Pressable>
-    <Pressable onPress={() => setShowStart('time')} style={[styles.input, {width: 100}]}><Text style={{color:colors.text}}>{time}</Text></Pressable>
+    <View style={{flex:1}}><DatePickerField label={kind==='task'?'Start Date':'Start Date'} value={startDate} onChange={setStartDate} /></View>
+    <View style={{flex:1}}><TimePickerField label="Time" value={time} onChange={(v) => setTime(v.slice(0,5))} /></View>
   </View>
-  {showStart && <DateTimePicker value={localIso(startDate, time) || new Date()} mode={showStart} is24Hour={true} onChange={(_: any, d?: Date) => {
-    setShowStart(null);
-    if(d){ if(showStart==='date') setStartDate(d.toISOString().slice(0,10)); else setTime(d.toTimeString().slice(0,5)); }
-  }} />}
   
   {kind==='task'?<>
-    <Text style={styles.label}>Deadline</Text>
     <View style={styles.inline}>
-      <Pressable onPress={() => setShowDue('date')} style={[styles.input, {flex: 1}]}><Text style={{color:colors.text}}>{dueDate}</Text></Pressable>
-      <Pressable onPress={() => setShowDue('time')} style={[styles.input, {width: 100}]}><Text style={{color:colors.text}}>{dueTime}</Text></Pressable>
+      <View style={{flex:1}}><DatePickerField label="Due Date" value={dueDate} onChange={setDueDate} /></View>
+      <View style={{flex:1}}><TimePickerField label="Due Time" value={dueTime} onChange={(v) => setDueTime(v ? v.slice(0,5) : '')} allowClear /></View>
     </View>
-    {showDue && <DateTimePicker value={localIso(dueDate, dueTime) || new Date()} mode={showDue} is24Hour={true} onChange={(_: any, d?: Date) => {
-      setShowDue(null);
-      if(d){ if(showDue==='date') setDueDate(d.toISOString().slice(0,10)); else setDueTime(d.toTimeString().slice(0,5)); }
-    }} />}
-    <Pressable onPress={()=>setRecurring(!recurring)} style={styles.toggle}><Text style={styles.label}>Recurring task</Text><Text style={styles.toggleText}>{recurring?'Yes':'No'}</Text></Pressable>{recurring?<View style={styles.segments}>{(['DAILY','WEEKLY','MONTHLY'] as const).map(f=><Pressable key={f} onPress={()=>setFrequency(f)} style={[styles.segment,frequency===f&&styles.active]}><Text style={frequency===f?styles.activeText:styles.muted}>{f.toLowerCase()}</Text></Pressable>)}</View>:null}
+    <Pressable onPress={()=>setRecurring(!recurring)} style={styles.toggle}><AppText variant="bodySm" weight="semiBold">Recurring task</AppText><Text style={styles.toggleText}>{recurring?'Yes':'No'}</Text></Pressable>{recurring?<View style={styles.segments}>{(['DAILY','WEEKLY','MONTHLY'] as const).map(f=><Pressable key={f} onPress={()=>setFrequency(f)} style={[styles.segment,frequency===f&&styles.active]}><Text style={frequency===f?styles.activeText:styles.muted}>{f.toLowerCase()}</Text></Pressable>)}</View>:null}
   </>:null}
-  <View style={styles.reminder}><Text style={styles.label}>Reminder</Text><Text style={styles.reminderText}>10 minutes before start time</Text></View>
-  <Pressable disabled={saving||!title.trim()} onPress={save} style={styles.save}><Text style={styles.saveText}>{saving?'Saving…':initialData?`Save changes`:`Create ${kind}`}</Text></Pressable>
+  <View style={styles.reminder}><AppText variant="bodySm" weight="semiBold">Reminder</AppText><Text style={styles.reminderText}>10 minutes before start time</Text></View>
+  <AppButton isLoading={saving} disabled={!title.trim()} onPress={save} label={initialData?`Save changes`:`Create ${kind}`} style={{marginTop: 12}} />
  </ScrollView></View></View></Modal>
 }
 const styles=StyleSheet.create({

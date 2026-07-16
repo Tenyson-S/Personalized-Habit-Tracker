@@ -3,9 +3,13 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-nativ
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { radius, spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 
 export function AuthScreen() {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   const setTokens = useAuthStore((state) => state.setTokens);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -52,10 +56,10 @@ export function AuthScreen() {
 
       <View style={styles.form}>
         {mode === 'register' && (
-          <TextInput value={displayName} onChangeText={setDisplayName} placeholder="What should Hearth call you?" style={styles.input} />
+          <TextInput value={displayName} onChangeText={setDisplayName} placeholder="What should Hearth call you?" placeholderTextColor={colors.textMuted} style={styles.input} />
         )}
-        <TextInput value={email} onChangeText={setEmail} placeholder="Email" keyboardType="email-address" autoCapitalize="none" style={styles.input} />
-        <TextInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry style={styles.input} />
+        <TextInput value={email} onChangeText={setEmail} placeholder="Email" placeholderTextColor={colors.textMuted} keyboardType="email-address" autoCapitalize="none" style={styles.input} />
+        <TextInput value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor={colors.textMuted} secureTextEntry style={styles.input} />
         <Pressable onPress={submit} disabled={loading} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>{loading ? 'One moment…' : mode === 'login' ? 'Enter Hearth' : 'Begin quietly'}</Text>
         </Pressable>
@@ -68,7 +72,7 @@ export function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: spacing.xl, gap: spacing.md },
   eyebrow: { color: colors.primary, fontWeight: '700', letterSpacing: 2 },
   title: { color: colors.text, fontSize: 34, lineHeight: 40, fontWeight: '700' },

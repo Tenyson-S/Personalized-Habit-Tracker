@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Stealth Tracker",
-    "slug": "stealth-tracker",
+    "name": "Stealth Track",
+    "slug": "stealth-track",
     "version": "0.5.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",

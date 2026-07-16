@@ -4,12 +4,25 @@ export type User = {
   email: string;
   display_name: string;
   timezone: string;
+  auth_provider: 'EMAIL' | 'GOOGLE';
   profile?: {
     occupation: string;
     target_sleep_time: string | null;
     target_wake_time: string | null;
     onboarding_completed: boolean;
+    has_completed_guide: boolean;
   };
+};
+
+export type UserSettings = {
+  theme: 'SYSTEM' | 'LIGHT' | 'DARK';
+  default_reminder_minutes: number;
+  habit_notifications_enabled: boolean;
+  daily_notifications_enabled: boolean;
+  task_notifications_enabled: boolean;
+  weekly_reflection_enabled: boolean;
+  monthly_reflection_enabled: boolean;
+  reduced_motion: boolean;
 };
 
 export type HabitToday = {
@@ -80,6 +93,7 @@ export type TaskToday = {
   priority: 'LOW' | 'NORMAL' | 'IMPORTANT';
   due_date: string | null;
   completed: boolean;
+  life_area: string;
 };
 
 export type TodayPayload = {

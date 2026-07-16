@@ -4,7 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import { Card } from '../../components/Card';
 import { api } from '../../services/api';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { radius, spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 import type {
   AnalyticsOverview,
   AnalyticsPeriod,
@@ -35,6 +37,8 @@ function formatPeriod(start: string, end: string) {
 }
 
 export function InsightsPanel() {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   const [period, setPeriod] = useState<AnalyticsPeriod>('30d');
   const overview = useQuery({
     queryKey: ['analytics-overview', period],
@@ -79,7 +83,7 @@ export function InsightsPanel() {
 
       <Text style={styles.rangeText}>{formatPeriod(overview.data.range.start, overview.data.range.end)}</Text>
 
-      <SummaryGrid data={overview.data} />
+      <SummaryGrid data={overview.data} styles={styles} />
 
       <View style={styles.sectionHeader}>
         <Text style={styles.kicker}>WHAT STOOD OUT</Text>
@@ -93,17 +97,17 @@ export function InsightsPanel() {
         </View>
       ))}
 
-      <LifeAreaSection overview={overview.data} />
-      <RhythmSection data={rhythm.data} />
-      <TaskTimingSection data={tasks.data} />
-      <RecordsSection data={records.data} />
+      <LifeAreaSection overview={overview.data} styles={styles} />
+      <RhythmSection data={rhythm.data} styles={styles} />
+      <TaskTimingSection data={tasks.data} styles={styles} />
+      <RecordsSection data={records.data} styles={styles} />
 
       <Text style={styles.footerNote}>A pattern can be useful without becoming a command.</Text>
     </View>
   );
 }
 
-function SummaryGrid({ data }: { data: AnalyticsOverview }) {
+function SummaryGrid({ data, styles }: { data: AnalyticsOverview; styles: any }) {
   const metrics = [
     { label: 'Active days', value: `${data.current.active_days}`, detail: `of ${data.range.days}` },
     { label: 'Habits', value: `${data.current.habit_completions}`, detail: 'completed' },
@@ -125,7 +129,7 @@ function SummaryGrid({ data }: { data: AnalyticsOverview }) {
   );
 }
 
-function LifeAreaSection({ overview }: { overview: AnalyticsOverview }) {
+function LifeAreaSection({ overview, styles }: { overview: AnalyticsOverview; styles: any }) {
   const visible = overview.life_areas.filter((item) => item.total_actions > 0);
   const rows = visible.length > 0 ? visible : overview.life_areas.slice(0, 4);
   const max = Math.max(1, ...rows.map((item) => item.total_actions));
@@ -155,7 +159,7 @@ function LifeAreaSection({ overview }: { overview: AnalyticsOverview }) {
   );
 }
 
-function RhythmSection({ data }: { data: AnalyticsRhythm }) {
+function RhythmSection({ data, styles }: { data: AnalyticsRhythm; styles: any }) {
   const visibleAreas = data.areas.filter((area) => area.total > 0).slice(0, 6);
   const maxCell = Math.max(1, ...visibleAreas.flatMap((area) => area.counts));
   const strongestTime = useMemo(
@@ -194,7 +198,7 @@ function RhythmSection({ data }: { data: AnalyticsRhythm }) {
   );
 }
 
-function TaskTimingSection({ data }: { data: TaskAnalytics }) {
+function TaskTimingSection({ data, styles }: { data: TaskAnalytics; styles: any }) {
   const deadline = data.current.deadline_behavior;
   return (
     <>
@@ -204,9 +208,9 @@ function TaskTimingSection({ data }: { data: TaskAnalytics }) {
       </View>
       <Card>
         <View style={styles.deadlineRow}>
-          <DeadlineMetric label="Early" value={deadline.early} />
-          <DeadlineMetric label="Near due" value={deadline.on_time} />
-          <DeadlineMetric label="Late" value={deadline.late} />
+          <DeadlineMetric label="Early" value={deadline.early} styles={styles} />
+          <DeadlineMetric label="Near due" value={deadline.on_time} styles={styles} />
+          <DeadlineMetric label="Late" value={deadline.late} styles={styles} />
         </View>
         <Text style={styles.reflection}>{data.current.reflection}</Text>
         <Text style={styles.mutedSmall}>{data.current.completed} tasks completed · {data.current.open_now} currently open</Text>
@@ -215,7 +219,7 @@ function TaskTimingSection({ data }: { data: TaskAnalytics }) {
   );
 }
 
-function DeadlineMetric({ label, value }: { label: string; value: number }) {
+function DeadlineMetric({ label, value, styles }: { label: string; value: number; styles: any }) {
   return (
     <View style={styles.deadlineMetric}>
       <Text style={styles.deadlineValue}>{value}</Text>
@@ -224,7 +228,7 @@ function DeadlineMetric({ label, value }: { label: string; value: number }) {
   );
 }
 
-function RecordsSection({ data }: { data: AnalyticsRecords }) {
+function RecordsSection({ data, styles }: { data: AnalyticsRecords; styles: any }) {
   return (
     <>
       <View style={styles.sectionHeader}>
@@ -263,7 +267,7 @@ function shortArea(label: string) {
     .replace('Everything Else That Keeps Life Moving', 'Life Admin');
 }
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { gap: spacing.md },
   intro: { gap: 6, paddingVertical: 4 },
   kicker: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.7 },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AuthScreen } from '../features/auth/AuthScreen';
 import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
 import { api } from '../services/api';
@@ -9,8 +9,11 @@ import { colors } from '../theme/tokens';
 import type { User } from '../types/api';
 import { SwipeTabShell } from './SwipeTabShell';
 
+import { GuideScreen } from '../features/guide/GuideScreen';
+
 export function RootNavigator() {
   const tokens = useAuthStore((state) => state.tokens);
+  const queryClient = useQueryClient();
   const me = useQuery({
     queryKey: ['me'],
     queryFn: async () => (await api.get<User>('/me/')).data,
@@ -21,6 +24,20 @@ export function RootNavigator() {
   if (me.isLoading) {
     return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}><ActivityIndicator /></View>;
   }
+
+  const hasCompletedGuide = me.data?.profile?.has_completed_guide ?? true;
+  
+  if (!hasCompletedGuide) {
+    return (
+      <GuideScreen 
+        onComplete={async () => {
+          await api.post('/me/complete-guide/');
+          queryClient.invalidateQueries({ queryKey: ['me'] });
+        }} 
+      />
+    );
+  }
+
   if (me.data && !me.data.profile?.onboarding_completed) return <OnboardingScreen />;
   return <SwipeTabShell />;
 }

@@ -1,12 +1,16 @@
 import React, { PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { colors, radius, spacing } from '../theme/tokens';
+import { radius, spacing } from '../theme/tokens';
+import type { ThemeColors } from '../theme/tokens';
+import { useTheme } from '../theme/ThemeContext';
 
 export function Card({ children }: PropsWithChildren) {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
   return <View style={styles.card}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderColor: colors.border,

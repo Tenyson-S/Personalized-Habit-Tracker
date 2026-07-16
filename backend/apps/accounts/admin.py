@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import User
+admin.site.site_header = "Stealth Track Administration"
+admin.site.site_title = "Stealth Track Admin"
+admin.site.index_title = "Operations Dashboard"
 
 @admin.register(User)
 class VillageUserAdmin(UserAdmin):

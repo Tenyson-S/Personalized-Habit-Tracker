@@ -11,35 +11,24 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { GUIDE_SLIDES } from '../../constants/guideSlides';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 
-const { width } = Dimensions.get('window');
 const nativeDriven = Platform.OS !== 'web';
-
-// Dark premium palette
-const D = {
-  bg: '#0D0F0E',
-  surface: '#141817',
-  surfaceElevated: '#1C211E',
-  accent: '#4CAF7D',
-  accentSoft: '#1A3327',
-  text: '#E8EDE9',
-  muted: '#7A8A7C',
-  faint: '#3D4A3F',
-  border: '#252C27',
-};
 
 // ─── Pagination Dots ────────────────────────────────────────────────────────
 
-function PaginationDots({ count, activeIndex }: { count: number; activeIndex: number }) {
+function PaginationDots({ count, activeIndex, styles }: { count: number; activeIndex: number; styles: any }) {
   return (
-    <View style={dotStyles.row} accessibilityLabel={`Slide ${activeIndex + 1} of ${count}`}>
+    <View style={styles.dotRow} accessibilityLabel={`Slide ${activeIndex + 1} of ${count}`}>
       {Array.from({ length: count }).map((_, i) => (
         <View
           key={i}
           style={[
-            dotStyles.dot,
-            i === activeIndex ? dotStyles.dotActive : dotStyles.dotInactive,
+            styles.dot,
+            i === activeIndex ? styles.dotActive : styles.dotInactive,
           ]}
         />
       ))}
@@ -47,51 +36,20 @@ function PaginationDots({ count, activeIndex }: { count: number; activeIndex: nu
   );
 }
 
-const dotStyles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 7, alignItems: 'center' },
-  dot: { borderRadius: 99 },
-  dotActive: { width: 22, height: 4, backgroundColor: D.accent },
-  dotInactive: { width: 6, height: 4, backgroundColor: D.faint },
-});
-
 // ─── Illustration ────────────────────────────────────────────────────────────
 
-function SlideIllustration({ icon, label }: { icon: string; label: string }) {
+function SlideIllustration({ icon, label, styles }: { icon: string; label: string; styles: any }) {
   return (
-    <View style={illusStyles.container}>
-      <View style={illusStyles.iconBox}>
-        <Text style={illusStyles.icon}>{icon}</Text>
+    <View style={styles.illusContainer}>
+      <View style={styles.illusIconBox}>
+        <Text style={styles.illusIcon}>{icon}</Text>
       </View>
-      <View style={illusStyles.labelBadge}>
-        <Text style={illusStyles.labelText}>{label}</Text>
+      <View style={styles.illusLabelBadge}>
+        <Text style={styles.illusLabelText}>{label}</Text>
       </View>
     </View>
   );
 }
-
-const illusStyles = StyleSheet.create({
-  container: { alignItems: 'center', gap: 16 },
-  iconBox: {
-    width: 120,
-    height: 120,
-    borderRadius: 36,
-    backgroundColor: D.accentSoft,
-    borderWidth: 1,
-    borderColor: D.accent + '44',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: { fontSize: 52, color: D.accent },
-  labelBadge: {
-    backgroundColor: D.surfaceElevated,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: D.border,
-  },
-  labelText: { color: D.muted, fontSize: 12, letterSpacing: 0.5 },
-});
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
@@ -100,6 +58,9 @@ type Props = {
 };
 
 export function GuideScreen({ onComplete }: Props) {
+  const { colors } = useTheme();
+  const styles = useStyles(colors);
+  const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const btnScale = useRef(new Animated.Value(1)).current;
@@ -132,15 +93,15 @@ export function GuideScreen({ onComplete }: Props) {
   }
 
   return (
-    <SafeAreaView style={screen.safe}>
+    <SafeAreaView style={styles.safe}>
       {/* Top bar */}
-      <View style={screen.topBar}>
-        <Text style={screen.stepLabel}>
+      <View style={styles.topBar}>
+        <Text style={styles.stepLabel}>
           {activeIndex + 1} / {GUIDE_SLIDES.length}
         </Text>
         {!isLast && (
           <Pressable onPress={handleComplete} hitSlop={16} accessibilityLabel="Skip guide" accessibilityRole="button">
-            <Text style={screen.skipText}>Skip</Text>
+            <Text style={styles.skipText}>Skip</Text>
           </Pressable>
         )}
       </View>
@@ -156,40 +117,40 @@ export function GuideScreen({ onComplete }: Props) {
         contentContainerStyle={{ alignItems: 'stretch' }}
       >
         {GUIDE_SLIDES.map((slide) => (
-          <View key={slide.id} style={slideStyles.container}>
-            <SlideIllustration icon={slide.accentIcon} label={slide.accentLabel} />
-            <View style={slideStyles.textBlock}>
-              <Text style={slideStyles.title}>{slide.title}</Text>
-              <Text style={slideStyles.body}>{slide.body}</Text>
+          <View key={slide.id} style={[styles.slideContainer, { width }]}>
+            <SlideIllustration icon={slide.accentIcon} label={slide.accentLabel} styles={styles} />
+            <View style={styles.textBlock}>
+              <Text style={styles.title}>{slide.title}</Text>
+              <Text style={styles.body}>{slide.body}</Text>
             </View>
           </View>
         ))}
       </ScrollView>
 
       {/* Bottom controls */}
-      <View style={screen.footer}>
-        <PaginationDots count={GUIDE_SLIDES.length} activeIndex={activeIndex} />
+      <View style={styles.footer}>
+        <PaginationDots count={GUIDE_SLIDES.length} activeIndex={activeIndex} styles={styles} />
 
-        <View style={screen.btnRow}>
+        <View style={styles.btnRow}>
           {/* Back */}
           <Pressable
             onPress={goBack}
-            style={[screen.backBtn, activeIndex === 0 && { opacity: 0 }]}
+            style={[styles.backBtn, activeIndex === 0 && { opacity: 0 }]}
             disabled={activeIndex === 0}
             accessibilityLabel="Previous slide"
           >
-            <Text style={screen.backText}>← Back</Text>
+            <Text style={styles.backText}>← Back</Text>
           </Pressable>
 
           {/* Next / Get Started */}
           <Animated.View style={{ transform: [{ scale: btnScale }] }}>
             <Pressable
               onPress={goNext}
-              style={screen.nextBtn}
+              style={styles.nextBtn}
               accessibilityLabel={isLast ? 'Get started' : 'Next slide'}
               accessibilityRole="button"
             >
-              <Text style={screen.nextText}>
+              <Text style={styles.nextText}>
                 {isLast ? 'Get Started →' : 'Next →'}
               </Text>
             </Pressable>
@@ -200,9 +161,33 @@ export function GuideScreen({ onComplete }: Props) {
   );
 }
 
-const slideStyles = StyleSheet.create({
-  container: {
-    width,
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
+  dotRow: { flexDirection: 'row', gap: 7, alignItems: 'center' },
+  dot: { borderRadius: 99 },
+  dotActive: { width: 22, height: 4, backgroundColor: colors.primary },
+  dotInactive: { width: 6, height: 4, backgroundColor: colors.surfaceMuted },
+  illusContainer: { alignItems: 'center', gap: 16 },
+  illusIconBox: {
+    width: 120,
+    height: 120,
+    borderRadius: 36,
+    backgroundColor: colors.primarySoft,
+    borderWidth: 1,
+    borderColor: colors.primary + '44',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  illusIcon: { fontSize: 52, color: colors.primary },
+  illusLabelBadge: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  illusLabelText: { color: colors.textMuted, fontSize: 12, letterSpacing: 0.5 },
+  slideContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 36,
@@ -211,7 +196,7 @@ const slideStyles = StyleSheet.create({
   },
   textBlock: { gap: 14, alignItems: 'center' },
   title: {
-    color: D.text,
+    color: colors.text,
     fontSize: 32,
     fontWeight: '700',
     lineHeight: 38,
@@ -219,15 +204,12 @@ const slideStyles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   body: {
-    color: D.muted,
+    color: colors.textMuted,
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'center',
   },
-});
-
-const screen = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: D.bg },
+  safe: { flex: 1, backgroundColor: colors.background },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -236,8 +218,8 @@ const screen = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 4,
   },
-  stepLabel: { color: D.faint, fontSize: 12, letterSpacing: 1 },
-  skipText: { color: D.muted, fontSize: 14, letterSpacing: 0.3 },
+  stepLabel: { color: colors.surfaceMuted, fontSize: 12, letterSpacing: 1 },
+  skipText: { color: colors.textMuted, fontSize: 14, letterSpacing: 0.3 },
   footer: {
     paddingHorizontal: 24,
     paddingBottom: 40,
@@ -252,14 +234,14 @@ const screen = StyleSheet.create({
     width: '100%',
   },
   backBtn: { paddingVertical: 12, paddingHorizontal: 4, minWidth: 80 },
-  backText: { color: D.muted, fontSize: 15 },
+  backText: { color: colors.textMuted, fontSize: 15 },
   nextBtn: {
-    backgroundColor: D.accent,
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 14,
     minWidth: 148,
     alignItems: 'center',
   },
-  nextText: { color: '#0D0F0E', fontWeight: '700', fontSize: 15 },
+  nextText: { color: colors.background, fontWeight: '700', fontSize: 15 },
 });

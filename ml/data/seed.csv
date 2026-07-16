@@ -951,3 +951,13 @@ mow the lawn,LIFE_ADMIN
 walk the dog,HEALTH
 feed the dog,LIFE_ADMIN
 do yoga,HEALTH
+watch a movie,REST
+watch movies,REST
+watch netflix,REST
+play video games,REST
+play games,REST
+watch anime,REST
+watch tv,REST
+go to the cinema,REST
+watch youtube,REST
+binge watch a series,REST
