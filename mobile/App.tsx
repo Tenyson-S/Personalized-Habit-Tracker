@@ -84,7 +84,7 @@ function AppContent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NavigationContainer>
+      <NavigationContainer documentTitle={{ formatter: () => 'Stealth Track' }}>
         <RootNavigator />
       </NavigationContainer>
     </QueryClientProvider>
