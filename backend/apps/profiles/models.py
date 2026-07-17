@@ -9,7 +9,7 @@ class UserProfile(models.Model):
     target_sleep_time = models.TimeField(null=True, blank=True)
     target_wake_time = models.TimeField(null=True, blank=True)
     onboarding_completed = models.BooleanField(default=False)
-    has_completed_guide = models.BooleanField(default=True)
+    has_completed_guide = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

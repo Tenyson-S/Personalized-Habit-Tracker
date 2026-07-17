@@ -5,7 +5,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { scheduleRecurringTaskReminder, scheduleStartReminder, scheduleWeeklyActivityReminders } from '../../services/reminders';
 import { useComposerStore } from '../../store/composerStore';
-import { colors, radius, spacing } from '../../theme/tokens';
+import { useSettingsStore } from '../../store/settingsStore';
+import { radius, spacing } from '../../theme/tokens';
+import type { ThemeColors } from '../../theme/tokens';
+import { useTheme } from '../../theme/ThemeContext';
 import { AppText, AppButton, AppInput } from '../../components/ui';
 import { DatePickerField } from '../../components/forms/DatePickerField';
 import { TimePickerField } from '../../components/forms/TimePickerField';
@@ -23,6 +26,9 @@ function localIso(date:string,time:string){
 export function ActivityComposer(){
  const queryClient = useQueryClient();
  const { isOpen, initialData, close } = useComposerStore();
+ const { settings } = useSettingsStore();
+ const { colors } = useTheme();
+ const styles = useStyles(colors);
  const visible = isOpen;
  const onClose = close;
  const onSaved = async () => {
@@ -33,13 +39,17 @@ export function ActivityComposer(){
       queryClient.invalidateQueries({ queryKey: ['today'] }),
     ]);
  };
+ const now = new Date();
+ const defaultDue = addHours(now, 1);
+ const todayStr = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+
  const [kind,setKind]=useState<Kind>('habit'); const [title,setTitle]=useState(''); const [description,setDescription]=useState('');
  const [originType,setOriginType]=useState<'NEW'|'EXISTING'>('NEW');
- const [days,setDays]=useState<Record<string,boolean>>(Object.fromEntries(DAYS.map(d=>[d,true]))); 
- const [time,setTime]=useState(extractLocalTimeForApi(new Date()).slice(0,5));
- const [startDate,setStartDate]=useState(extractLocalDateForApi(new Date())); 
- const [dueDate,setDueDate]=useState(extractLocalDateForApi(new Date()));
- const [dueTime,setDueTime]=useState(''); 
+ const [days,setDays]=useState<Record<string,boolean>>(Object.fromEntries(DAYS.map(d=>[d,d === todayStr]))); 
+ const [time,setTime]=useState(extractLocalTimeForApi(now).slice(0,5));
+ const [startDate,setStartDate]=useState(extractLocalDateForApi(now)); 
+ const [dueDate,setDueDate]=useState(extractLocalDateForApi(defaultDue));
+ const [dueTime,setDueTime]=useState(extractLocalTimeForApi(defaultDue).slice(0,5)); 
  const [recurring,setRecurring]=useState(false); const [frequency,setFrequency]=useState<'DAILY'|'WEEKLY'|'MONTHLY'>('WEEKLY'); const [saving,setSaving]=useState(false);
  const [scheduleMode,setScheduleMode]=useState<'SELECTED_DAYS'|'WEEKLY_TARGET'>('SELECTED_DAYS'); const [targetPerWeek,setTargetPerWeek]=useState('5');
  const schedule=useMemo(()=>Object.fromEntries(DAYS.map(d=>[d,Boolean(days[d])])),[days]);
@@ -53,11 +63,11 @@ export function ActivityComposer(){
       if (initialData.type === 'task') {
         if (initialData.data.starts_at) {
           const d = new Date(initialData.data.starts_at);
-          setStartDate(d.toISOString().slice(0,10));
-          setTime(d.toTimeString().slice(0,5));
+          setStartDate(extractLocalDateForApi(d));
+          setTime(extractLocalTimeForApi(d).slice(0,5));
         }
         if (initialData.data.due_date) setDueDate(initialData.data.due_date);
-        if (initialData.data.due_at) setDueTime(new Date(initialData.data.due_at).toTimeString().slice(0,5));
+        if (initialData.data.due_at) setDueTime(extractLocalTimeForApi(new Date(initialData.data.due_at)).slice(0,5));
         setRecurring(initialData.data.is_recurring ?? false);
       } else {
         if (initialData.data.start_date) setStartDate(initialData.data.start_date);
@@ -70,30 +80,46 @@ export function ActivityComposer(){
     }
   }, [visible, initialData]);
 
- function reset(){setKind('habit');setTitle('');setDescription('');setRecurring(false);setOriginType('NEW');setTime(extractLocalTimeForApi(new Date()).slice(0,5));setStartDate(extractLocalDateForApi(new Date()));setDueDate(extractLocalDateForApi(new Date()));setDueTime('');}
+ function reset(){setKind('habit');setTitle('');setDescription('');setRecurring(false);setOriginType('NEW');setTime(extractLocalTimeForApi(now).slice(0,5));setStartDate(extractLocalDateForApi(now));setDueDate(extractLocalDateForApi(defaultDue));setDueTime(extractLocalTimeForApi(defaultDue).slice(0,5));setDays(Object.fromEntries(DAYS.map(d=>[d,d === todayStr])));}
  async function save(){
-  if(!title.trim()) return; setSaving(true);
+  if(!title.trim()) return; 
+  
+  if (kind === 'task') {
+      const starts = localIso(startDate, time);
+      const due = localIso(dueDate, dueTime);
+      if (starts && due && due <= starts) {
+          Alert.alert('Invalid times', 'Due time must be after the start time.');
+          return;
+      }
+  }
+
+  setSaving(true);
   try{
+   const reminderEnabled = kind === 'habit' ? settings?.habit_notifications_enabled !== false : kind === 'daily' ? settings?.daily_notifications_enabled !== false : settings?.task_notifications_enabled !== false;
+   const reminderMinutes = settings?.default_reminder_minutes ?? 10;
+
    if(kind==='habit') {
-    const payload = {name:title.trim(),description,habit_type:'BOOLEAN',start_date:startDate,origin_type:originType,existing_since:originType==='EXISTING'?startDate:null,foundation_target:21,is_active:true,schedule_mode:scheduleMode,target_per_week:scheduleMode==='WEEKLY_TARGET'?Number(targetPerWeek):null,preferred_time:`${time}:00`,reminder_enabled:true,reminder_minutes_before:10,status:'ACTIVE',schedule};
+    const payload = {name:title.trim(),description,habit_type:'BOOLEAN',start_date:startDate,origin_type:originType,existing_since:originType==='EXISTING'?startDate:null,foundation_target:21,is_active:true,schedule_mode:scheduleMode,target_per_week:scheduleMode==='WEEKLY_TARGET'?Number(targetPerWeek):null,preferred_time:`${time}:00`,reminder_enabled:reminderEnabled,reminder_minutes_before:reminderMinutes,status:'ACTIVE',schedule};
     if (initialData) await api.patch(`/habits/${initialData.id}/`, payload);
     else await api.post('/habits/', payload);
    }
    if(kind==='daily') {
-    const payload = {title:title.trim(),description,start_date:startDate,preferred_time:`${time}:00`,reminder_enabled:true,reminder_minutes_before:10,status:'ACTIVE',schedule};
+    const payload = {title:title.trim(),description,start_date:startDate,preferred_time:`${time}:00`,reminder_enabled:reminderEnabled,reminder_minutes_before:reminderMinutes,status:'ACTIVE',schedule};
     if (initialData) await api.patch(`/dailies/${initialData.id}/`, payload);
     else await api.post('/dailies/', payload);
    }
    if(kind==='task'){
     const starts=localIso(startDate,time); const due=localIso(dueDate,dueTime);
-    const payload = {title:title.trim(),description,priority:'NORMAL',starts_at:starts?.toISOString(),due_at:due?.toISOString(),due_date:dueDate,is_recurring:recurring,reminder_enabled:true,reminder_minutes_before:10,status:'OPEN',recurrence:recurring?{frequency,interval:1,days_of_week:frequency==='WEEKLY'?DAYS.filter(d=>days[d]).map(d=>d.toUpperCase()):[],day_of_month:frequency==='MONTHLY'?Number(dueDate.slice(-2)):null,ends_at:null}:null};
+    const payload = {title:title.trim(),description,priority:'NORMAL',starts_at:starts?.toISOString(),due_at:due?.toISOString(),due_date:dueDate,is_recurring:recurring,reminder_enabled:reminderEnabled,reminder_minutes_before:reminderMinutes,status:'OPEN',recurrence:recurring?{frequency,interval:1,days_of_week:frequency==='WEEKLY'?DAYS.filter(d=>days[d]).map(d=>d.toUpperCase()):[],day_of_month:frequency==='MONTHLY'?Number(dueDate.slice(-2)):null,ends_at:null}:null};
     if (initialData) await api.patch(`/tasks/${initialData.id}/`, payload);
     else await api.post('/tasks/', payload);
     
-    if(recurring) await scheduleRecurringTaskReminder({ title:title.trim(), time, frequency, days:DAYS.filter(d=>days[d]), dayOfMonth:Number(dueDate.slice(-2)), minutesBefore:10 });
-    else if(starts) await scheduleStartReminder({title:title.trim(),startsAt:starts,minutesBefore:10});
+    if(reminderEnabled){
+      if(recurring) await scheduleRecurringTaskReminder({ title:title.trim(), time, frequency, days:DAYS.filter(d=>days[d]), dayOfMonth:Number(dueDate.slice(-2)), minutesBefore:reminderMinutes });
+      else if(starts) await scheduleStartReminder({title:title.trim(),startsAt:starts,minutesBefore:reminderMinutes});
+    }
    } else {
-    if(scheduleMode==='SELECTED_DAYS' || kind==='daily') await scheduleWeeklyActivityReminders({ title:title.trim(), time, days:DAYS.filter(d=>days[d]), minutesBefore:10 });
+    if(reminderEnabled && (scheduleMode==='SELECTED_DAYS' || kind==='daily')) await scheduleWeeklyActivityReminders({ title:title.trim(), time, days:DAYS.filter(d=>days[d]), minutesBefore:reminderMinutes });
    }
    reset(); onSaved(); onClose();
   }catch(e:any){Alert.alert('Could not save',e?.response?.data?JSON.stringify(e.response.data):'Nothing was lost. Please try again.');} finally{setSaving(false);}
@@ -118,7 +144,7 @@ export function ActivityComposer(){
     </View>
     <View style={[styles.foundationNote,originType==='EXISTING'&&styles.existingNote]}>
       <Text style={styles.foundationKicker}>{originType==='NEW'?'21-DAY FOUNDATION':'EXISTING RHYTHM'}</Text>
-      <Text style={styles.foundationBody}>{originType==='NEW'?'A scheduled check-in moves the counter forward. Missing a day does not erase the foundation, and random off-schedule activity does not count.':'Hearth will not pretend your earlier effort never happened. This habit starts established.'}</Text>
+      <Text style={styles.foundationBody}>{originType==='NEW'?'A scheduled check-in moves the counter forward. Missing a day does not erase the foundation, and random off-schedule activity does not count.':'Stealth Track will not pretend your earlier effort never happened. This habit starts established.'}</Text>
     </View>
   </>:null}
   <AppInput label="Name" value={title} onChangeText={setTitle} placeholder={kind==='habit'?'Example: Read regularly':kind==='daily'?'Example: Review tomorrow’s plan':'Example: Finish portfolio API'} />
@@ -137,17 +163,17 @@ export function ActivityComposer(){
     </View>
     <Pressable onPress={()=>setRecurring(!recurring)} style={styles.toggle}><AppText variant="bodySm" weight="semiBold">Recurring task</AppText><Text style={styles.toggleText}>{recurring?'Yes':'No'}</Text></Pressable>{recurring?<View style={styles.segments}>{(['DAILY','WEEKLY','MONTHLY'] as const).map(f=><Pressable key={f} onPress={()=>setFrequency(f)} style={[styles.segment,frequency===f&&styles.active]}><Text style={frequency===f?styles.activeText:styles.muted}>{f.toLowerCase()}</Text></Pressable>)}</View>:null}
   </>:null}
-  <View style={styles.reminder}><AppText variant="bodySm" weight="semiBold">Reminder</AppText><Text style={styles.reminderText}>10 minutes before start time</Text></View>
+  <View style={styles.reminder}><AppText variant="bodySm" weight="semiBold">Reminder</AppText><Text style={styles.reminderText}>{settings?.default_reminder_minutes ?? 10} minutes before start time</Text></View>
   <AppButton isLoading={saving} disabled={!title.trim()} onPress={save} label={initialData?`Save changes`:`Create ${kind}`} style={{marginTop: 12}} />
  </ScrollView></View></View></Modal>
 }
-const styles=StyleSheet.create({
+const useStyles = (colors: ThemeColors) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 20 },
   card: { backgroundColor: colors.background, borderRadius: radius.xl, maxHeight: '85%', overflow: 'hidden' },
   page:{padding:24,paddingTop:24,gap:14},
   row:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'},
   eyebrow:{color:colors.primary,fontSize:10,fontWeight:'700',letterSpacing:1.4, textTransform: 'uppercase'},
-  title:{fontSize:24,fontWeight:'700',color:colors.ink, letterSpacing: -0.5, marginTop: 4},
+  title:{fontSize:24,fontWeight:'700',color:colors.text, letterSpacing: -0.5, marginTop: 4},
   close:{color:colors.primary,fontWeight:'700'},
   segments:{flexDirection:'row',gap:8,flexWrap:'wrap'},
   segment:{paddingHorizontal:14,paddingVertical:10,borderRadius:99,borderWidth:1,borderColor:colors.border},
@@ -158,12 +184,12 @@ const styles=StyleSheet.create({
   input:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:14,color:colors.text},
   originRow:{flexDirection:'row',gap:10},
   originCard:{flex:1,minHeight:126,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,padding:14,gap:8},
-  originCardActive:{borderColor:colors.ink,backgroundColor:colors.mint},
-  originTitle:{color:colors.ink,fontSize:15,fontWeight:'700'},
+  originCardActive:{borderColor:colors.text,backgroundColor: colors.primarySoft },
+  originTitle:{color:colors.text,fontSize:15,fontWeight:'700'},
   originBody:{color:colors.textMuted,fontSize:12,lineHeight:17},
-  foundationNote:{backgroundColor:colors.butter,borderRadius:radius.lg,padding:15,gap:6},
+  foundationNote:{backgroundColor: colors.surfaceMuted,borderRadius:radius.lg,padding:15,gap:6},
   existingNote:{backgroundColor:colors.primarySoft},
-  foundationKicker:{color:colors.ink,fontSize:10,fontWeight:'800',letterSpacing:1.2},
+  foundationKicker:{color:colors.text,fontSize:10,fontWeight:'800',letterSpacing:1.2},
   foundationBody:{color:colors.textMuted,fontSize:12,lineHeight:18},
   days:{flexDirection:'row',justifyContent:'space-between'},
   day:{width:38,height:38,borderRadius:99,borderWidth:1,borderColor:colors.border,alignItems:'center',justifyContent:'center'},
@@ -173,6 +199,6 @@ const styles=StyleSheet.create({
   toggleText:{color:colors.primary,fontWeight:'800'},
   reminder:{backgroundColor:colors.surfaceMuted,padding:14,borderRadius:16},
   reminderText:{color:colors.textMuted,marginTop:4},
-  save:{backgroundColor:colors.ink,padding:16,borderRadius:16,alignItems:'center',marginTop:12},
+  save:{backgroundColor:colors.primary,padding:16,borderRadius:16,alignItems:'center',marginTop:12},
   saveText:{color:'white',fontWeight:'800'}
 });

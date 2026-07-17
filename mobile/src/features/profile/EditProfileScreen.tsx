@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +25,15 @@ export function EditProfileScreen() {
   
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!me.data) return;
+    setDisplayName(me.data.display_name ?? '');
+    setOccupation(me.data.profile?.occupation ?? '');
+    setTimezone(me.data.timezone ?? '');
+    setSleepTarget(me.data.profile?.target_sleep_time ?? '');
+    setWakeTarget(me.data.profile?.target_wake_time ?? '');
+  }, [me.data]);
 
   async function handleSave() {
     setIsSaving(true);

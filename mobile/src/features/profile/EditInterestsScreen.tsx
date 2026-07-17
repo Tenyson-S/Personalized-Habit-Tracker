@@ -8,7 +8,8 @@ import { radius, spacing } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
 
-type Interest = { id: string; name: string; type: 'LIFE_AREA' | 'ENJOYMENT' };
+type InterestType = 'IMPROVE' | 'ENJOY' | 'CARE_ABOUT';
+type Interest = { id: string; name: string; type: InterestType };
 
 export function EditInterestsScreen() {
   const { colors } = useTheme();
@@ -21,11 +22,12 @@ export function EditInterestsScreen() {
     queryFn: async () => (await api.get<Interest[]>('/interests/')).data,
   });
 
-  const [newLifeArea, setNewLifeArea] = useState('');
-  const [newEnjoyment, setNewEnjoyment] = useState('');
+  const [newImprove, setNewImprove] = useState('');
+  const [newEnjoy, setNewEnjoy] = useState('');
+  const [newCareAbout, setNewCareAbout] = useState('');
 
   const addMutation = useMutation({
-    mutationFn: async (payload: { name: string, type: 'LIFE_AREA' | 'ENJOYMENT' }) => {
+    mutationFn: async (payload: { name: string, type: InterestType }) => {
       await api.post('/interests/', payload);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['interests'] }),
@@ -38,19 +40,25 @@ export function EditInterestsScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['interests'] }),
   });
 
-  const handleAdd = (type: 'LIFE_AREA' | 'ENJOYMENT') => {
-    const value = type === 'LIFE_AREA' ? newLifeArea : newEnjoyment;
+  const handleAdd = (type: InterestType) => {
+    let value = '';
+    if (type === 'IMPROVE') value = newImprove;
+    else if (type === 'ENJOY') value = newEnjoy;
+    else if (type === 'CARE_ABOUT') value = newCareAbout;
+    
     if (!value.trim()) return;
     
     addMutation.mutate({ name: value.trim(), type });
-    if (type === 'LIFE_AREA') setNewLifeArea('');
-    else setNewEnjoyment('');
+    if (type === 'IMPROVE') setNewImprove('');
+    else if (type === 'ENJOY') setNewEnjoy('');
+    else if (type === 'CARE_ABOUT') setNewCareAbout('');
   };
 
   if (isLoading) return <Screen><ActivityIndicator /></Screen>;
 
-  const lifeAreas = interests.filter(i => i.type === 'LIFE_AREA');
-  const enjoyments = interests.filter(i => i.type === 'ENJOYMENT');
+  const improves = interests.filter(i => i.type === 'IMPROVE');
+  const enjoys = interests.filter(i => i.type === 'ENJOY');
+  const cares = interests.filter(i => i.type === 'CARE_ABOUT');
 
   return (
     <Screen contentStyle={styles.scroll}>
@@ -62,10 +70,10 @@ export function EditInterestsScreen() {
       <Text style={styles.body}>We use these to help categorize your habits and tasks automatically.</Text>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Life Areas</Text>
-        <Text style={styles.sectionDesc}>Broad categories like "Health", "Career", or "Family".</Text>
+        <Text style={styles.sectionTitle}>Things I want to improve</Text>
+        <Text style={styles.sectionDesc}>Areas of your life you are actively working on (e.g. "Health", "Career").</Text>
         <View style={styles.tagsContainer}>
-          {lifeAreas.map(item => (
+          {improves.map(item => (
             <View key={item.id} style={styles.tag}>
               <Text style={styles.tagText}>{item.name}</Text>
               <Pressable onPress={() => deleteMutation.mutate(item.id)} style={styles.deleteBtn}>
@@ -77,23 +85,23 @@ export function EditInterestsScreen() {
         <View style={styles.addRow}>
           <TextInput 
             style={styles.input} 
-            value={newLifeArea} 
-            onChangeText={setNewLifeArea} 
+            value={newImprove} 
+            onChangeText={setNewImprove} 
             placeholder="Add new area..." 
             placeholderTextColor={colors.textMuted}
-            onSubmitEditing={() => handleAdd('LIFE_AREA')}
+            onSubmitEditing={() => handleAdd('IMPROVE')}
           />
-          <Pressable onPress={() => handleAdd('LIFE_AREA')} style={styles.addButton}>
+          <Pressable onPress={() => handleAdd('IMPROVE')} style={styles.addButton}>
             <Text style={styles.addButtonText}>Add</Text>
           </Pressable>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Things You Enjoy</Text>
-        <Text style={styles.sectionDesc}>Specific hobbies or activities you do for fun and rest.</Text>
+        <Text style={styles.sectionTitle}>Things I enjoy</Text>
+        <Text style={styles.sectionDesc}>Hobbies or activities you do for fun and rest.</Text>
         <View style={styles.tagsContainer}>
-          {enjoyments.map(item => (
+          {enjoys.map(item => (
             <View key={item.id} style={styles.tag}>
               <Text style={styles.tagText}>{item.name}</Text>
               <Pressable onPress={() => deleteMutation.mutate(item.id)} style={styles.deleteBtn}>
@@ -105,13 +113,41 @@ export function EditInterestsScreen() {
         <View style={styles.addRow}>
           <TextInput 
             style={styles.input} 
-            value={newEnjoyment} 
-            onChangeText={setNewEnjoyment} 
+            value={newEnjoy} 
+            onChangeText={setNewEnjoy} 
             placeholder="Add new hobby..." 
             placeholderTextColor={colors.textMuted}
-            onSubmitEditing={() => handleAdd('ENJOYMENT')}
+            onSubmitEditing={() => handleAdd('ENJOY')}
           />
-          <Pressable onPress={() => handleAdd('ENJOYMENT')} style={styles.addButton}>
+          <Pressable onPress={() => handleAdd('ENJOY')} style={styles.addButton}>
+            <Text style={styles.addButtonText}>Add</Text>
+          </Pressable>
+        </View>
+      </View>
+      
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Things I care about</Text>
+        <Text style={styles.sectionDesc}>People, causes, or values important to you.</Text>
+        <View style={styles.tagsContainer}>
+          {cares.map(item => (
+            <View key={item.id} style={styles.tag}>
+              <Text style={styles.tagText}>{item.name}</Text>
+              <Pressable onPress={() => deleteMutation.mutate(item.id)} style={styles.deleteBtn}>
+                <Text style={styles.deleteText}>×</Text>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+        <View style={styles.addRow}>
+          <TextInput 
+            style={styles.input} 
+            value={newCareAbout} 
+            onChangeText={setNewCareAbout} 
+            placeholder="Add value or cause..." 
+            placeholderTextColor={colors.textMuted}
+            onSubmitEditing={() => handleAdd('CARE_ABOUT')}
+          />
+          <Pressable onPress={() => handleAdd('CARE_ABOUT')} style={styles.addButton}>
             <Text style={styles.addButtonText}>Add</Text>
           </Pressable>
         </View>

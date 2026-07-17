@@ -56,19 +56,19 @@ export function AuthScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.eyebrow}>HEARTH</Text>
+    <View style={[styles.container, { alignSelf: 'center', maxWidth: 440, width: '100%' }]}>
+      <Text style={styles.eyebrow}>STEALTH TRACK</Text>
       <Text style={styles.title}>Build your life. Keep returning.</Text>
       <Text style={styles.subtitle}>A quiet place to reflect on the life you are already building.</Text>
 
       <View style={styles.form}>
         {mode === 'register' && (
-          <TextInput value={displayName} onChangeText={setDisplayName} placeholder="What should Hearth call you?" placeholderTextColor={colors.textMuted} style={styles.input} />
+          <TextInput value={displayName} onChangeText={setDisplayName} placeholder="What should Stealth Track call you?" placeholderTextColor={colors.textMuted} style={styles.input} />
         )}
         <TextInput value={email} onChangeText={setEmail} placeholder="Email" placeholderTextColor={colors.textMuted} keyboardType="email-address" autoCapitalize="none" style={styles.input} />
         <TextInput value={password} onChangeText={setPassword} placeholder="Password" placeholderTextColor={colors.textMuted} secureTextEntry style={styles.input} />
         <Pressable onPress={submit} disabled={loading} style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>{loading ? 'One moment…' : mode === 'login' ? 'Enter Hearth' : 'Begin quietly'}</Text>
+          <Text style={styles.primaryButtonText}>{loading ? 'One moment…' : mode === 'login' ? 'Enter Stealth Track' : 'Begin quietly'}</Text>
         </Pressable>
       </View>
 

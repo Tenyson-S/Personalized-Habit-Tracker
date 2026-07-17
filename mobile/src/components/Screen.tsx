@@ -17,5 +17,5 @@ export function Screen({ children, contentStyle }: PropsWithChildren<{ contentSt
 
 const useStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.md, paddingBottom: 96, gap: spacing.md },
+  content: { padding: spacing.md, paddingBottom: 96, gap: spacing.md, width: '100%', maxWidth: 720, alignSelf: 'center' },
 });

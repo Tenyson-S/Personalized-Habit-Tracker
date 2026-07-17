@@ -59,7 +59,7 @@ export function ProfileScreen() {
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{me.data?.display_name?.slice(0, 2).toUpperCase() || 'ME'}</Text>
         </View>
-        <Text style={styles.name}>{me.data?.display_name || 'Hearth resident'}</Text>
+        <Text style={styles.name}>{me.data?.display_name || 'Stealth Track user'}</Text>
         <Text style={styles.occupation}>{me.data?.profile?.occupation || 'No occupation set'}</Text>
         <Text style={styles.email}>{me.data?.email}</Text>
         
@@ -95,7 +95,6 @@ export function ProfileScreen() {
         <Text style={styles.sectionHeader}>ACCOUNT</Text>
         <View style={styles.card}>
           <SettingsRow title="Sign out" onPress={() => Alert.alert('Sign out?', 'You can return whenever you like.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign out', onPress: logout }])} styles={styles} colors={colors} />
-          <SettingsRow title="Delete account" destructive onPress={confirmDelete} styles={styles} colors={colors} />
         </View>
       </View>
     </Screen>
