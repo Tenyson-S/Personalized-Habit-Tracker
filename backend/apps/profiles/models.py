@@ -39,6 +39,7 @@ class UserSettings(models.Model):
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="settings")
     theme = models.CharField(max_length=10, choices=ThemeChoices.choices, default=ThemeChoices.SYSTEM)
+    push_token = models.CharField(max_length=255, blank=True)
     default_reminder_minutes = models.IntegerField(default=0)
     habit_notifications_enabled = models.BooleanField(default=True)
     daily_notifications_enabled = models.BooleanField(default=True)

@@ -7,9 +7,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
 if not DEBUG:
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+    
+    allowed = os.getenv("DJANGO_ALLOWED_HOSTS", "")
+    if not allowed or allowed == "*":
+        raise ValueError("DJANGO_ALLOWED_HOSTS must be set securely in production")
+    ALLOWED_HOSTS = [h.strip() for h in allowed.split(",") if h.strip()]
 else:
     SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me-use-a-long-random-secret-key-2026")
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if h.strip()]
+    ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if h.strip()]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -65,6 +70,9 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 import dj_database_url
 
+if not DEBUG and not (os.getenv("DATABASE_URL") or os.getenv("POSTGRES_DB_URI")):
+    raise ValueError("DATABASE_URL must be set in production")
+
 DATABASES = {
     "default": dj_database_url.config(
         default=os.getenv("DATABASE_URL") or os.getenv("POSTGRES_DB_URI") or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -77,6 +85,7 @@ DATABASES = {
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -124,8 +133,16 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.4.0",
 }
 
-CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "https://stealth-tracker-rho.vercel.app,http://localhost:8081").split(",") if o.strip()]
+if not DEBUG:
+    cors_allowed = os.getenv("CORS_ALLOWED_ORIGINS", "")
+    if not cors_allowed or cors_allowed == "*":
+         raise ValueError("CORS_ALLOWED_ORIGINS must be set securely in production")
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_allowed.split(",") if o.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "https://stealth-tracker-rho.vercel.app,http://localhost:8081").split(",") if o.strip()]
+
 CORS_ALLOW_ALL_ORIGINS = DEBUG
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
 
 # Production Logging

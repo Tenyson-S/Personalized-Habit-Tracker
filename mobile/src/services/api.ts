@@ -16,6 +16,12 @@ let refreshing: Promise<string> | null = null;
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (!error.response) {
+      const { Alert } = require('react-native');
+      Alert.alert('Connection Error', 'Please check your internet connection and try again.');
+      throw error;
+    }
+
     const original = error.config;
     const store = useAuthStore.getState();
     if (error.response?.status !== 401 || original?._retry || !store.tokens?.refresh) {
@@ -36,6 +42,8 @@ api.interceptors.response.use(
       original.headers.Authorization = `Bearer ${access}`;
       return api(original);
     } catch (refreshError) {
+      const { queryClient } = require('./queryClient');
+      queryClient.clear();
       await useAuthStore.getState().signOut();
       throw refreshError;
     }

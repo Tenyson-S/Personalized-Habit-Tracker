@@ -3,11 +3,11 @@ from statistics import mean
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.db.models import Q
 from django.utils import timezone
-from apps.habits.models import Habit
+from apps.habits.models import Habit, HabitCompletion
 from apps.habits.services import is_habit_scheduled
 from apps.sleep.models import SleepSession
 from apps.tasks.models import Task
-from apps.dailies.models import Daily
+from apps.dailies.models import Daily, DailyCompletion
 
 
 def user_tz(user):
@@ -29,7 +29,10 @@ def day_bounds(user, day):
 
 
 def scheduled_habits(user, day):
-    habits = Habit.objects.filter(user=user, is_active=True, start_date__lte=day).select_related("schedule").prefetch_related("completions")
+    from django.db.models import Prefetch
+    habits = Habit.objects.filter(user=user, is_active=True, start_date__lte=day).select_related("schedule").prefetch_related(
+        Prefetch("completions", queryset=HabitCompletion.objects.filter(date=day))
+    )
     return [h for h in habits if is_habit_scheduled(h, day)]
 
 
@@ -81,7 +84,10 @@ def today_payload(user):
     today_metrics = day_metrics(user, today)
     yesterday_metrics = day_metrics(user, yesterday)
 
-    dailies = Daily.objects.filter(user=user, status=Daily.Status.ACTIVE, start_date__lte=today).select_related("schedule").prefetch_related("completions")
+    from django.db.models import Prefetch
+    dailies = Daily.objects.filter(user=user, status=Daily.Status.ACTIVE, start_date__lte=today).select_related("schedule").prefetch_related(
+        Prefetch("completions", queryset=DailyCompletion.objects.filter(date=today))
+    )
     dailies = [d for d in dailies if d.schedule.is_scheduled(today)]
     daily_completions = {c.daily_id:c for d in dailies for c in d.completions.all() if c.date == today}
 
@@ -146,10 +152,23 @@ def today_payload(user):
 
 
 def period_metrics(user, start, end):
+    from django.db.models import Prefetch
     days = [start + timedelta(days=i) for i in range((end - start).days + 1)]
-    metrics = [day_metrics(user, d) for d in days]
-    scheduled = sum(m["scheduled_habits"] for m in metrics)
-    completed = sum(m["completed_habits"] for m in metrics)
+    
+    habits = Habit.objects.filter(
+        user=user, is_active=True, start_date__lte=end
+    ).select_related("schedule").prefetch_related(
+        Prefetch("completions", queryset=HabitCompletion.objects.filter(date__range=(start, end)))
+    )
+
+    scheduled = 0
+    completed = 0
+    for day in days:
+        for h in habits:
+            if h.start_date <= day and is_habit_scheduled(h, day):
+                scheduled += 1
+                if any(c.date == day and c.completed for c in h.completions.all()):
+                    completed += 1
 
     start_dt, _ = day_bounds(user, start)
     _, end_dt = day_bounds(user, end)

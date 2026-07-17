@@ -10,6 +10,12 @@ type ComposerState = {
 export const useComposerStore = create<ComposerState>((set) => ({
   isOpen: false,
   initialData: null,
-  open: (initialData = null) => set({ isOpen: true, initialData }),
+  open: (payload = null) => {
+    if (payload && typeof payload === 'object' && 'nativeEvent' in payload) {
+      set({ isOpen: true, initialData: null });
+    } else {
+      set({ isOpen: true, initialData: payload as any });
+    }
+  },
   close: () => set({ isOpen: false, initialData: null }),
 }));

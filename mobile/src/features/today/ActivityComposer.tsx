@@ -25,8 +25,10 @@ function localIso(date:string,time:string){
 }
 export function ActivityComposer(){
  const queryClient = useQueryClient();
- const { isOpen, initialData, close } = useComposerStore();
- const { settings } = useSettingsStore();
+ const isOpen = useComposerStore(state => state.isOpen);
+ const initialData = useComposerStore(state => state.initialData);
+ const close = useComposerStore(state => state.close);
+ const settings = useSettingsStore(state => state.settings);
  const { colors } = useTheme();
  const styles = useStyles(colors);
  const visible = isOpen;
@@ -69,6 +71,13 @@ export function ActivityComposer(){
         if (initialData.data.due_date) setDueDate(initialData.data.due_date);
         if (initialData.data.due_at) setDueTime(extractLocalTimeForApi(new Date(initialData.data.due_at)).slice(0,5));
         setRecurring(initialData.data.is_recurring ?? false);
+        if (initialData.data.recurrence) {
+          setFrequency(initialData.data.recurrence.frequency);
+          if (initialData.data.recurrence.frequency === 'WEEKLY') {
+            const taskDays = initialData.data.recurrence.days_of_week || [];
+            setDays(Object.fromEntries(DAYS.map(d => [d, taskDays.includes(d.toUpperCase())])));
+          }
+        }
       } else {
         if (initialData.data.start_date) setStartDate(initialData.data.start_date);
       }

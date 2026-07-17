@@ -7,9 +7,7 @@ import { api } from '../../services/api';
 import { radius, spacing } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
-
-type InterestType = 'IMPROVE' | 'ENJOY' | 'CARE_ABOUT';
-type Interest = { id: string; name: string; type: InterestType };
+import type { Interest, InterestType } from '../../types/api';
 
 export function EditInterestsScreen() {
   const { colors } = useTheme();

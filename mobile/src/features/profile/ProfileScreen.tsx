@@ -1,5 +1,5 @@
-import React from 'react';
-import { Alert, Pressable, StyleSheet, Text, View, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View, ScrollView, Modal } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,6 +11,7 @@ import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
 import type { User } from '../../types/api';
 import type { ProfileStackParamList } from './ProfileNavigator';
+import { GuideScreen } from '../guide/GuideScreen';
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'ProfileHub'>;
 
@@ -30,6 +31,7 @@ export function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
   const signOut = useAuthStore((state) => state.signOut);
   const me = useQuery({ queryKey: ['me'], queryFn: async () => (await api.get<User>('/me/')).data });
+  const [showGuide, setShowGuide] = useState(false);
 
   async function logout() {
     try {
@@ -48,7 +50,7 @@ export function ProfileScreen() {
       'This will permanently delete your profile, habits, tasks, and history. This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete Account', style: 'destructive', onPress: () => console.log('Delete flow not implemented yet') },
+        { text: 'Delete Account', style: 'destructive', onPress: () => {} },
       ]
     );
   }
@@ -80,7 +82,7 @@ export function ProfileScreen() {
         <Text style={styles.sectionHeader}>PREFERENCES</Text>
         <View style={styles.card}>
           <SettingsRow title="Notifications & Appearance" onPress={() => navigation.navigate('Settings')} styles={styles} colors={colors} />
-          <SettingsRow title="App guide" onPress={() => Alert.alert('Guide', 'Opening guide...')} styles={styles} colors={colors} />
+          <SettingsRow title="App guide" onPress={() => setShowGuide(true)} styles={styles} colors={colors} />
         </View>
       </View>
 
@@ -97,6 +99,10 @@ export function ProfileScreen() {
           <SettingsRow title="Sign out" onPress={() => Alert.alert('Sign out?', 'You can return whenever you like.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign out', onPress: logout }])} styles={styles} colors={colors} />
         </View>
       </View>
+
+      <Modal visible={showGuide} animationType="slide" presentationStyle="pageSheet">
+        <GuideScreen onComplete={() => setShowGuide(false)} />
+      </Modal>
     </Screen>
   );
 }

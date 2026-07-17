@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TodayScreen } from '../features/today/TodayScreen';
 import { VillageScreen } from '../features/village/VillageScreen';
 import { JourneyScreen } from '../features/journey/JourneyScreen';
@@ -22,6 +23,7 @@ const nativeDriven = Platform.OS !== 'web';
 
 export function SwipeTabShell() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
   const indexRef = useRef(activeIndex);
@@ -80,7 +82,7 @@ export function SwipeTabShell() {
         </Animated.View>
       </View>
 
-      <View style={styles.nav}>
+      <View style={[styles.nav, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         {TABS.map((tab, index) => {
           const active = index === activeIndex;
           const color = active ? colors.textPrimary : colors.textMuted;
@@ -116,9 +118,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   pager: { flex: 1, overflow: 'hidden' },
   row: { flex: 1, flexDirection: 'row' },
-  nav: { height: 76, flexDirection: 'row', backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 5 },
-  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  navItemAdd: { flex: 1.2, alignItems: 'center', justifyContent: 'center', marginTop: -15 },
+  nav: { flexDirection: 'row', backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 8, paddingTop: 8 },
+  navItem: { flex: 1, height: 54, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  navItemAdd: { flex: 1.2, height: 54, alignItems: 'center', justifyContent: 'center', marginTop: -15 },
   addCircle: { width: 50, height: 50, borderRadius: 99, backgroundColor: colors.textPrimary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
   addText: { color: 'white', fontSize: 32, lineHeight: 36, textAlign: 'center' },
   label: { color: colors.textMuted, fontSize: 10, fontWeight: '600' },

@@ -72,6 +72,18 @@ class CompleteGuideView(APIView):
         return Response({"has_completed_guide": True})
 
 
+class PushTokenView(APIView):
+    def post(self, request):
+        token = request.data.get("token")
+        if not token:
+            return Response({"detail": "Token is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        settings_obj, _ = UserSettings.objects.get_or_create(user=request.user)
+        settings_obj.push_token = token
+        settings_obj.save(update_fields=["push_token"])
+        return Response({"detail": "Push token successfully registered."})
+
+
 class InterestListCreateView(generics.ListCreateAPIView):
     serializer_class = UserInterestSerializer
 

@@ -49,15 +49,57 @@ export function TodayScreen() {
 
   const completeHabit = useMutation({
     mutationFn: async ({ id, date, completed }: { id: string; date: string; completed: boolean }) => api.put(`/habits/${id}/completion/${date}/`, { completed }),
-    onSuccess: refresh,
+    onMutate: async ({ id, completed }) => {
+      await queryClient.cancelQueries({ queryKey: ['today'] });
+      const previous = queryClient.getQueryData<TodayPayload>(['today']);
+      if (previous) {
+        queryClient.setQueryData<TodayPayload>(['today'], {
+          ...previous,
+          habits: previous.habits.map(h => h.id === id ? { ...h, completion: { completed, value: h.completion?.value ?? 0 } } : h)
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _newVal, context) => {
+      if (context?.previous) queryClient.setQueryData(['today'], context.previous);
+    },
+    onSettled: () => refresh(),
   });
   const completeDaily = useMutation({
     mutationFn: async ({ id, date, completed }: { id: string; date: string; completed: boolean }) => api.put(`/dailies/${id}/completion/${date}/`, { completed }),
-    onSuccess: refresh,
+    onMutate: async ({ id, completed }) => {
+      await queryClient.cancelQueries({ queryKey: ['today'] });
+      const previous = queryClient.getQueryData<TodayPayload>(['today']);
+      if (previous) {
+        queryClient.setQueryData<TodayPayload>(['today'], {
+          ...previous,
+          dailies: previous.dailies.map(d => d.id === id ? { ...d, completion: { completed } } : d)
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _newVal, context) => {
+      if (context?.previous) queryClient.setQueryData(['today'], context.previous);
+    },
+    onSettled: () => refresh(),
   });
   const completeTask = useMutation({
     mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => api.post(`/tasks/${id}/complete/`, { completed }),
-    onSuccess: refresh,
+    onMutate: async ({ id, completed }) => {
+      await queryClient.cancelQueries({ queryKey: ['today'] });
+      const previous = queryClient.getQueryData<TodayPayload>(['today']);
+      if (previous) {
+        queryClient.setQueryData<TodayPayload>(['today'], {
+          ...previous,
+          tasks: previous.tasks.map(t => t.id === id ? { ...t, completed } : t)
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _newVal, context) => {
+      if (context?.previous) queryClient.setQueryData(['today'], context.previous);
+    },
+    onSettled: () => refresh(),
   });
   const sleep = useMutation({
     mutationFn: async () => sleepCurrent.data ? api.post('/sleep/wake/', {}) : api.post('/sleep/start/', {}),

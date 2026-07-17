@@ -91,7 +91,7 @@ export function JourneyScreen() {
             <Text style={styles.celebrationMark}>{celebrationMark(journey.data.celebration.kind)}</Text>
             <Text style={styles.celebrationTitle}>{journey.data.celebration.title}</Text>
             <Text style={styles.reflection}>{journey.data.celebration.message}</Text>
-            {period === 'daily' && journey.data.celebration.suggestions.length > 0 && (
+            {journey.data.celebration.suggestions.length > 0 && (
               <View style={styles.suggestionList}>
                 <Text style={styles.suggestionHeading}>Things you said you enjoy</Text>
                 {journey.data.celebration.suggestions.map((suggestion) => (

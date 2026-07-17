@@ -8,15 +8,24 @@ class UserManager(BaseUserManager):
     use_in_migrations = True
 
     def create_user(self, email, password=None, **extra_fields):
+        from django.db import transaction
+        from apps.profiles.models import UserProfile, UserSettings
+        
         if not email:
             raise ValueError("Email is required")
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        if password:
-            user.set_password(password)
-        else:
-            user.set_unusable_password()
-        user.save(using=self._db)
+        
+        with transaction.atomic():
+            user = self.model(email=email, **extra_fields)
+            if password:
+                user.set_password(password)
+            else:
+                user.set_unusable_password()
+            user.save(using=self._db)
+            
+            UserProfile.objects.create(user=user)
+            UserSettings.objects.create(user=user)
+            
         return user
 
     def create_superuser(self, email, password, **extra_fields):

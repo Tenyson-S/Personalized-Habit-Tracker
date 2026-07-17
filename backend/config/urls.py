@@ -4,7 +4,12 @@ from django.http import JsonResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 def health_check(request):
-    return JsonResponse({"status": "ok"})
+    try:
+        from django.db import connection
+        connection.cursor().execute("SELECT 1")
+        return JsonResponse({"status": "ok"})
+    except Exception as e:
+        return JsonResponse({"status": "error", "detail": str(e)}, status=503)
 
 urlpatterns = [
     path("health/", health_check, name="health_check"),

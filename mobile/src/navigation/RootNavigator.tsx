@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AuthScreen } from '../features/auth/AuthScreen';
 import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
@@ -24,6 +24,14 @@ export function RootNavigator() {
   if (me.isLoading) {
     return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}><ActivityIndicator /></View>;
   }
+  if (me.isError || !me.data) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 20 }}>
+        <Text style={{ color: colors.text, textAlign: 'center', marginBottom: 12 }}>Could not connect to the server.</Text>
+        <Text style={{ color: colors.textMuted, textAlign: 'center' }}>Please check your internet connection or try restarting the app.</Text>
+      </View>
+    );
+  }
 
   const hasCompletedGuide = me.data?.profile?.has_completed_guide ?? true;
   
@@ -38,6 +46,6 @@ export function RootNavigator() {
     );
   }
 
-  if (me.data && !me.data.profile?.onboarding_completed) return <OnboardingScreen />;
+  if (!me.data.profile?.onboarding_completed) return <OnboardingScreen />;
   return <SwipeTabShell />;
 }
