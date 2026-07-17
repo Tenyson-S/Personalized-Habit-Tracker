@@ -12,7 +12,7 @@ type ThemeState = {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      theme: 'SYSTEM',
+      theme: 'LIGHT',
       setTheme: (theme) => set({ theme }),
     }),
     {

@@ -14,8 +14,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   hydrated: false,
   tokens: null,
   hydrate: async () => {
-    const tokens = await readTokens();
-    set({ tokens, hydrated: true });
+    try {
+      const tokens = await readTokens();
+      set({ tokens, hydrated: true });
+    } catch (error) {
+      console.error('Failed to read auth tokens', error);
+      set({ tokens: null, hydrated: true });
+    }
   },
   setTokens: async (tokens) => {
     await saveTokens(tokens);

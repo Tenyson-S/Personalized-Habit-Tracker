@@ -124,7 +124,7 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.4.0",
 }
 
-CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "https://stealth-tracker-rho.vercel.app").split(",") if o.strip()]
+CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "https://stealth-tracker-rho.vercel.app,http://localhost:8081").split(",") if o.strip()]
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
 

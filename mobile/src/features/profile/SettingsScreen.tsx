@@ -45,7 +45,10 @@ export function SettingsScreen() {
               {(['SYSTEM', 'LIGHT', 'DARK'] as const).map(t => (
                 <Pressable 
                   key={t} 
-                  onPress={() => setTheme(t)}
+                  onPress={() => {
+                    setTheme(t);
+                    if (settings) updateSettings({ theme: t });
+                  }}
                   style={[styles.segment, theme === t && styles.segmentActive]}
                 >
                   <Text style={[styles.segmentText, theme === t && styles.segmentTextActive]}>

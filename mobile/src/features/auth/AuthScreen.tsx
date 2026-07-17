@@ -36,7 +36,14 @@ export function AuthScreen() {
         if (error.response) {
           // Server responded with an error (4xx/5xx)
           const data = error.response.data;
-          message = data?.detail ?? data?.email?.[0] ?? data?.password?.[0] ?? JSON.stringify(data);
+          
+          if (mode === 'login' && error.response.status === 401) {
+            message = 'Incorrect email or password.';
+          } else if (mode === 'register' && data?.email) {
+            message = 'This email is already in use. Please use a different one or sign in.';
+          } else {
+            message = data?.detail ?? data?.email?.[0] ?? data?.password?.[0] ?? JSON.stringify(data);
+          }
         } else if (error.request) {
           // Request was made but no response (network issue)
           message = `Network error: Cannot connect to ${error.config?.baseURL}. Make sure your phone and computer are on the same Wi-Fi and the API URL in .env is your computer's IP.`;
@@ -65,7 +72,12 @@ export function AuthScreen() {
         </Pressable>
       </View>
 
-      <Pressable onPress={() => setMode(mode === 'login' ? 'register' : 'login')}>
+      <Pressable onPress={() => {
+        setMode(mode === 'login' ? 'register' : 'login');
+        setEmail('');
+        setPassword('');
+        setDisplayName('');
+      }}>
         <Text style={styles.switchText}>{mode === 'login' ? 'New here? Create an account' : 'Already have an account? Sign in'}</Text>
       </Pressable>
     </View>
