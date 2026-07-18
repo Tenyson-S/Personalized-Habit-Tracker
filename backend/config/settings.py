@@ -141,13 +141,35 @@ SPECTACULAR_SETTINGS = {
 if not DEBUG:
     cors_allowed = os.getenv("CORS_ALLOWED_ORIGINS", "")
     if not cors_allowed or cors_allowed == "*":
-         raise ValueError("CORS_ALLOWED_ORIGINS must be set securely in production")
+        raise ValueError("CORS_ALLOWED_ORIGINS must be set securely in production")
     CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_allowed.split(",") if o.strip()]
+    # Always allow the local Expo dev server to hit production for easier development
+    if "http://localhost:8081" not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append("http://localhost:8081")
+    CORS_ALLOW_ALL_ORIGINS = False
 else:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "https://stealth-tracker-rho.vercel.app,http://localhost:8081").split(",") if o.strip()]
+    # In local dev, allow all origins for maximum convenience
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = []
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "idempotency-key",  # Required for our offline sync engine
+]
+CSRF_TRUSTED_ORIGINS = (
+    CORS_ALLOWED_ORIGINS
+    if not DEBUG else
+    ["http://localhost:8081", "http://127.0.0.1:8000", "https://stealth-tracker-rho.vercel.app"]
+)
 GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
 
 # Production Logging
