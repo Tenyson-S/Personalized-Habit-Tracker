@@ -109,19 +109,37 @@ export function ActivityComposer(){
 
    if(kind==='habit') {
     const payload = {name:title.trim(),description,habit_type:'BOOLEAN',start_date:startDate,origin_type:originType,existing_since:originType==='EXISTING'?startDate:null,foundation_target:21,is_active:true,schedule_mode:scheduleMode,target_per_week:scheduleMode==='WEEKLY_TARGET'?Number(targetPerWeek):null,preferred_time:`${time}:00`,reminder_enabled:reminderEnabled,reminder_minutes_before:reminderMinutes,status:'ACTIVE',schedule};
-    if (initialData) await api.patch(`/habits/${initialData.id}/`, payload);
-    else await api.post('/habits/', payload);
+    if (initialData) {
+      await api.patch(`/habits/${initialData.id}/`, payload);
+      queryClient.setQueryData(['manage-habits'], (old: any) => old?.map((h: any) => h.id === initialData.id ? { ...h, ...payload } : h));
+    } else {
+      const res = await api.post('/habits/', payload);
+      const newItem = { ...payload, id: res.data?.id || `offline-${Date.now()}`, created_at: new Date().toISOString() };
+      queryClient.setQueryData(['manage-habits'], (old: any) => [...(old || []), newItem]);
+    }
    }
    if(kind==='daily') {
     const payload = {title:title.trim(),description,start_date:startDate,preferred_time:`${time}:00`,reminder_enabled:reminderEnabled,reminder_minutes_before:reminderMinutes,status:'ACTIVE',schedule};
-    if (initialData) await api.patch(`/dailies/${initialData.id}/`, payload);
-    else await api.post('/dailies/', payload);
+    if (initialData) {
+      await api.patch(`/dailies/${initialData.id}/`, payload);
+      queryClient.setQueryData(['manage-dailies'], (old: any) => old?.map((d: any) => d.id === initialData.id ? { ...d, ...payload } : d));
+    } else {
+      const res = await api.post('/dailies/', payload);
+      const newItem = { ...payload, id: res.data?.id || `offline-${Date.now()}`, created_at: new Date().toISOString() };
+      queryClient.setQueryData(['manage-dailies'], (old: any) => [...(old || []), newItem]);
+    }
    }
    if(kind==='task'){
     const starts=localIso(startDate,time); const due=localIso(dueDate,dueTime);
     const payload = {title:title.trim(),description,priority:'NORMAL',starts_at:starts?.toISOString(),due_at:due?.toISOString(),due_date:dueDate,is_recurring:recurring,reminder_enabled:reminderEnabled,reminder_minutes_before:reminderMinutes,status:'OPEN',recurrence:recurring?{frequency,interval:1,days_of_week:frequency==='WEEKLY'?DAYS.filter(d=>days[d]).map(d=>d.toUpperCase()):[],day_of_month:frequency==='MONTHLY'?Number(dueDate.slice(-2)):null,ends_at:null}:null};
-    if (initialData) await api.patch(`/tasks/${initialData.id}/`, payload);
-    else await api.post('/tasks/', payload);
+    if (initialData) {
+      await api.patch(`/tasks/${initialData.id}/`, payload);
+      queryClient.setQueryData(['manage-tasks'], (old: any) => old?.map((t: any) => t.id === initialData.id ? { ...t, ...payload } : t));
+    } else {
+      const res = await api.post('/tasks/', payload);
+      const newItem = { ...payload, id: res.data?.id || `offline-${Date.now()}`, created_at: new Date().toISOString() };
+      queryClient.setQueryData(['manage-tasks'], (old: any) => [...(old || []), newItem]);
+    }
     
     if(reminderEnabled){
       if(recurring) await scheduleRecurringTaskReminder({ title:title.trim(), time, frequency, days:DAYS.filter(d=>days[d]), dayOfMonth:Number(dueDate.slice(-2)), minutesBefore:reminderMinutes });

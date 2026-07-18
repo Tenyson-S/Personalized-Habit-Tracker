@@ -2,6 +2,8 @@ import uuid
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.conf import settings
+
 
 
 class UserManager(BaseUserManager):
@@ -53,3 +55,13 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+class IdempotencyRecord(models.Model):
+    idempotency_key = models.CharField(max_length=128, unique=True, primary_key=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='idempotency_records')
+    response_code = models.IntegerField()
+    response_body = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)

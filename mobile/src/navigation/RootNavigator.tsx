@@ -10,6 +10,7 @@ import type { User } from '../types/api';
 import { SwipeTabShell } from './SwipeTabShell';
 
 import { GuideScreen } from '../features/guide/GuideScreen';
+import { OfflineBanner } from '../components/OfflineBanner';
 
 export function RootNavigator() {
   const tokens = useAuthStore((state) => state.tokens);
@@ -47,5 +48,10 @@ export function RootNavigator() {
   }
 
   if (!me.data.profile?.onboarding_completed) return <OnboardingScreen />;
-  return <SwipeTabShell />;
+  return (
+    <View style={{ flex: 1 }}>
+      <OfflineBanner />
+      <SwipeTabShell />
+    </View>
+  );
 }

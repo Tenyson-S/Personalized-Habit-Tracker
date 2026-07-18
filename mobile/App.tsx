@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BrandSplash } from './src/components/BrandSplash';
 import { GuideScreen } from './src/features/guide/GuideScreen';
@@ -9,27 +9,44 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAuthStore } from './src/store/authStore';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 
-import { queryClient } from './src/services/queryClient';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { queryClient, createScopedPersister } from './src/services/queryClient';
+
 function AppContent() {
   const hydrate = useAuthStore((state) => state.hydrate);
   const hydrated = useAuthStore((state) => state.hydrated);
+  const userId = useAuthStore((state) => state.userId);
+  const initConnectivityListener = require('./src/offline/network/connectivityStore').useConnectivityStore((state: any) => state.initConnectivityListener);
   const [showSplash, setShowSplash] = useState(true);
+
+  // Create a new persister whenever the userId changes to guarantee cache isolation
+  const persister = React.useMemo(() => createScopedPersister(userId), [userId]);
 
   useEffect(() => {
     hydrate();
-  }, [hydrate]);
+    const unsubscribe = initConnectivityListener();
+    return () => {
+      unsubscribe();
+    };
+  }, [hydrate, initConnectivityListener]);
 
   if (!hydrated) {
     return null; // Keep screen blank/native splash until hydration resolves
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        buster: userId || 'v1', // changing buster forces cache invalidation across users if same persister was used
+      }}
+    >
       <NavigationContainer documentTitle={{ formatter: () => 'Stealth Track' }}>
         <RootNavigator />
       </NavigationContainer>
       {showSplash && <BrandSplash onFinished={() => setShowSplash(false)} />}
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 
