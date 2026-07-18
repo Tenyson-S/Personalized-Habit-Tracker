@@ -8,7 +8,16 @@ export const api = axios.create({ baseURL, timeout: 10_000 });
 import { useConnectivityStore } from '../offline/network/connectivityStore';
 import { mutationQueue } from '../offline/queue/mutationQueue';
 
-api.interceptors.request.use((config) => {
+class OfflineMockError extends Error {
+  mockResponse: any;
+  constructor(mockResponse: any) {
+    super('OfflineMockError');
+    this.name = 'OfflineMockError';
+    this.mockResponse = mockResponse;
+  }
+}
+
+api.interceptors.request.use(async (config) => {
   const access = useAuthStore.getState().tokens?.access;
   if (access) config.headers.Authorization = `Bearer ${access}`;
   
@@ -17,18 +26,14 @@ api.interceptors.request.use((config) => {
   if (config.method !== 'get' && !config.headers['Idempotency-Key']) {
     config.headers['Idempotency-Key'] = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
-  return config;
-});
-
-const originalAdapter = api.defaults.adapter;
-api.defaults.adapter = async (config) => {
+  
   const isOnline = useConnectivityStore.getState().isInternetReachable;
   const isMutation = config.method && ['post', 'put', 'patch', 'delete'].includes(config.method.toLowerCase());
   
   if (isOnline === false && isMutation) {
     const auth = useAuthStore.getState();
     if (auth.userId) {
-      const idempotencyKey = config.headers['Idempotency-Key'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const idempotencyKey = config.headers['Idempotency-Key'];
       
       await mutationQueue.pushMutation({
         userId: auth.userId,
@@ -41,26 +46,30 @@ api.defaults.adapter = async (config) => {
       const { setPendingCount, pendingMutationCount } = useConnectivityStore.getState();
       setPendingCount(pendingMutationCount + 1);
 
-      // Return fake success response to trigger optimistic updates in useMutation.onSuccess
-      return {
+      // Throw fake success response to trigger optimistic updates in useMutation.onSuccess
+      throw new OfflineMockError({
         data: { _offline: true, id: `offline-${Date.now()}` },
         status: 200,
         statusText: 'OK',
         headers: {},
         config,
         request: {}
-      } as any;
+      });
     }
   }
-  
-  return originalAdapter!(config);
-};
+
+  return config;
+});
 
 let refreshing: Promise<string> | null = null;
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (error && error.name === 'OfflineMockError') {
+      return error.mockResponse;
+    }
+
     if (!error.response) {
       const { Alert } = require('react-native');
       Alert.alert('Connection Error', 'Please check your internet connection and try again.');
