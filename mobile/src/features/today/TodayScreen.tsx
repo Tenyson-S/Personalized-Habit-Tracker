@@ -5,7 +5,7 @@ import { Screen } from '../../components/Screen';
 import { api } from '../../services/api';
 import { ActivityManager } from './ActivityManager';
 import { HabitDashboard } from './HabitDashboard';
-import { radius, spacing } from '../../theme/tokens';
+import { radius, spacing, fonts } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
 import { useComposerStore } from '../../store/composerStore';
@@ -23,6 +23,25 @@ function greeting() {
   if (hour < 12) return 'morning';
   if (hour < 18) return 'afternoon';
   return 'evening';
+}
+
+function getActivityColor(type: string, category: string) {
+  const cat = (category || '').toUpperCase();
+  if (cat === 'HEALTH') return '76, 175, 80'; // Green
+  if (cat === 'CAREER') return '33, 150, 243'; // Blue
+  if (cat === 'LEARNING') return '255, 152, 0'; // Orange
+  if (cat === 'MINDFULNESS') return '156, 39, 176'; // Purple
+  if (cat === 'RELATIONSHIPS') return '233, 30, 99'; // Pink
+  if (cat === 'CREATIVITY') return '0, 188, 212'; // Cyan
+  if (cat === 'REST' || cat === 'SLEEP') return '63, 81, 181'; // Indigo
+  if (cat === 'PERSONAL_GROWTH') return '0, 150, 136'; // Teal
+  if (cat === 'LIFE_ADMIN') return '96, 125, 139'; // Blue Grey
+  
+  if (type === 'Habits') return '156, 39, 176'; // Purple
+  if (type === 'Dailies') return '33, 150, 243'; // Blue
+  if (type === 'Tasks') return '255, 152, 0'; // Orange
+
+  return '158, 158, 158'; // Grey
 }
 
 export function TodayScreen() {
@@ -55,7 +74,7 @@ export function TodayScreen() {
       if (previous) {
         queryClient.setQueryData<TodayPayload>(['today'], {
           ...previous,
-          habits: previous.habits.map(h => h.id === id ? { ...h, completion: { completed, value: h.completion?.value ?? 0 } } : h)
+          habits: previous.habits.map(h => h.id === id ? { ...h, completion: { completed, value: h.completion?.value ?? null } } : h)
         });
       }
       return { previous };
@@ -207,30 +226,35 @@ export function TodayScreen() {
         <ActivitySection
           title="Habits"
           empty="No habits scheduled today."
-          items={data.habits.map((habit) => ({ id: habit.id, title: habit.name, meta: habit.life_area.replaceAll('_', ' ').toLowerCase(), completed: Boolean(habit.completion?.completed), onPress: () => completeHabit.mutate({ id: habit.id, date: data.date, completed: !habit.completion?.completed }) }))}
+          items={data.habits.map((habit) => ({ id: habit.id, title: habit.name, meta: habit.life_area.replaceAll('_', ' ').toLowerCase(), category: habit.life_area, completed: Boolean(habit.completion?.completed), onPress: () => completeHabit.mutate({ id: habit.id, date: data.date, completed: !habit.completion?.completed }) }))}
           styles={styles}
         />
         <ActivitySection
           title="Dailies"
           empty="No dailies scheduled today."
-          items={data.dailies.map((daily) => ({ id: daily.id, title: daily.title, meta: daily.preferred_time ? daily.preferred_time.slice(0, 5) : daily.life_area.replaceAll('_', ' ').toLowerCase(), completed: Boolean(daily.completion?.completed), onPress: () => completeDaily.mutate({ id: daily.id, date: data.date, completed: !daily.completion?.completed }) }))}
+          items={data.dailies.map((daily) => ({ id: daily.id, title: daily.title, meta: daily.preferred_time ? daily.preferred_time.slice(0, 5) : daily.life_area.replaceAll('_', ' ').toLowerCase(), category: daily.life_area, completed: Boolean(daily.completion?.completed), onPress: () => completeDaily.mutate({ id: daily.id, date: data.date, completed: !daily.completion?.completed }) }))}
           styles={styles}
         />
         <ActivitySection
           title="Tasks"
           empty="Nothing waiting for you here."
-          items={data.tasks.map((task) => ({ id: task.id, title: task.title, meta: task.life_area ? task.life_area.replaceAll('_', ' ').toLowerCase() : task.priority.toLowerCase(), completed: task.completed, onPress: () => completeTask.mutate({ id: task.id, completed: !task.completed }) }))}
+          items={data.tasks.map((task) => ({ id: task.id, title: task.title, meta: task.life_area ? task.life_area.replaceAll('_', ' ').toLowerCase() : task.priority.toLowerCase(), category: task.life_area || '', completed: task.completed, onPress: () => completeTask.mutate({ id: task.id, completed: !task.completed }) }))}
           styles={styles}
         />
 
         <View style={styles.sleepCard}>
-          <View>
-            <Text style={styles.smallKicker}>REST</Text>
-            <Text style={styles.sleepValue}>{sleepCurrent.data ? 'Resting now…' : formatMinutes(data.sleep?.duration_minutes)}</Text>
+          <View style={{ marginBottom: 12 }}>
+            <Text style={styles.smallKicker}>REST TRACKER</Text>
+            <Text style={styles.sleepValue}>{sleepCurrent.data ? 'You are resting…' : formatMinutes(data.sleep?.duration_minutes)}</Text>
           </View>
-          <Pressable onPress={() => sleep.mutate()} disabled={sleep.isPending} style={styles.sleepButton}>
-            <Text style={styles.sleepButtonText}>{sleepCurrent.data ? "I'm awake" : 'Go to sleep'}</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Pressable onPress={() => !sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !!sleepCurrent.data} style={[styles.sleepButton, !!sleepCurrent.data && styles.sleepButtonDisabled]}>
+              <Text style={styles.sleepButtonText}>Start sleep</Text>
+            </Pressable>
+            <Pressable onPress={() => sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !sleepCurrent.data} style={[styles.sleepButton, !sleepCurrent.data && styles.sleepButtonDisabled]}>
+              <Text style={styles.sleepButtonText}>Wake up</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.compareCard}>
@@ -256,16 +280,31 @@ export function TodayScreen() {
   );
 }
 
-function ActivitySection({ title, empty, items, styles }: { title: string; empty: string; items: { id: string; title: string; meta: string; completed: boolean; onPress: () => void }[]; styles: any }) {
+function ActivitySection({ title, empty, items, styles }: { title: string; empty: string; items: { id: string; title: string; meta: string; category: string; completed: boolean; onPress: () => void }[]; styles: any }) {
+  if (items.length === 0) return null; // Hide empty sections entirely to keep UI clean and fast
+
   return (
-    <View style={styles.activityCard}>
+    <View style={styles.activitySection}>
       <Text style={styles.activitySectionTitle}>{title}</Text>
-      {items.length === 0 ? <Text style={styles.muted}>{empty}</Text> : items.map((item) => (
-        <Pressable key={item.id} onPress={item.onPress} style={styles.itemRow}>
-          <View style={[styles.check, item.completed && styles.checkDone]}><Text style={styles.checkText}>{item.completed ? '✓' : ''}</Text></View>
-          <View style={{ flex: 1 }}><Text style={[styles.itemTitle, item.completed && styles.itemDone]}>{item.title}</Text><Text style={styles.itemMeta}>{item.meta}</Text></View>
-        </Pressable>
-      ))}
+      <View style={{ gap: 12 }}>
+        {items.map((item) => {
+          const color = getActivityColor(title, item.category);
+          return (
+            <Pressable key={item.id} onPress={item.onPress} style={[styles.glassCard, { backgroundColor: `rgba(${color}, 0.12)`, borderColor: `rgba(${color}, 0.25)` }]}>
+              <View style={[styles.iconBox, { backgroundColor: `rgba(${color}, 0.15)` }]}>
+                <Text style={[styles.iconText, { color: `rgb(${color})` }]}>{item.title.charAt(0)}</Text>
+              </View>
+              <View style={{ flex: 1, paddingLeft: 14 }}>
+                <Text style={[styles.itemTitle, item.completed && styles.itemDone]}>{item.title}</Text>
+                <Text style={[styles.itemMeta, { color: `rgba(${color}, 0.9)` }, item.completed && { opacity: 0.5 }]}>{item.meta}</Text>
+              </View>
+              <View style={[styles.glassCheck, item.completed && { backgroundColor: `rgb(${color})`, borderColor: `rgb(${color})` }, !item.completed && { borderColor: `rgba(${color}, 0.35)` }]}>
+                <Text style={styles.checkText}>{item.completed ? '✓' : ''}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -278,69 +317,71 @@ const useStyles = (colors: ThemeColors) => StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
   page: { padding: 20, gap: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  greeting: { color: colors.textMuted, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', fontWeight: '600' },
-  name: { color: colors.text, fontSize: 20, fontWeight: '700', marginTop: 2 },
-  rule: { height: 1, backgroundColor: colors.text, opacity: 0.55 },
+  greeting: { color: colors.textMuted, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', fontFamily: fonts.extraBold },
+  name: { color: colors.text, fontSize: 22, fontFamily: fonts.extraBold, marginTop: 2 },
+  rule: { height: 1, backgroundColor: colors.border, opacity: 0.8 },
   heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12 },
-  heroKicker: { color: colors.textMuted, fontSize: 16, fontWeight: '400', marginBottom: 2 },
-  heroTitle: { color: colors.text, fontSize: 34, lineHeight: 38, letterSpacing: -1, fontWeight: '700' },
+  heroKicker: { color: colors.textMuted, fontSize: 16, fontFamily: fonts.medium, marginBottom: 2 },
+  heroTitle: { color: colors.text, fontSize: 34, lineHeight: 38, letterSpacing: -1, fontFamily: fonts.extraBold },
   dayProgress: { alignItems: 'flex-end', paddingBottom: 5 },
-  dayProgressValue: { color: colors.text, fontSize: 22, fontWeight: '700' },
-  dayProgressLabel: { color: colors.textMuted, fontSize: 11, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 },
+  dayProgressValue: { color: colors.text, fontSize: 24, fontFamily: fonts.extraBold },
+  dayProgressLabel: { color: colors.textMuted, fontSize: 11, fontFamily: fonts.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
   quickGrid: { flexDirection: 'row', gap: 12 },
   quickTile: { flex: 1, minHeight: 110, borderRadius: radius.lg, padding: 16, justifyContent: 'space-between' },
   blackTile: { backgroundColor: colors.elevatedBackground },
   butterTile: { backgroundColor: colors.surfaceMuted },
-  quickLabelLight: { color: colors.textMuted, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontWeight: '600' },
-  quickValueLight: { color: colors.text, fontSize: 28, fontWeight: '600' },
-  quickUnitLight: { color: colors.textMuted, fontSize: 11 },
-  quickLabel: { color: colors.textMuted, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontWeight: '600' },
-  quickValue: { color: colors.text, fontSize: 28, fontWeight: '600' },
-  quickUnit: { color: colors.textMuted, fontSize: 11 },
+  quickLabelLight: { color: colors.textMuted, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontFamily: fonts.extraBold },
+  quickValueLight: { color: colors.text, fontSize: 28, fontFamily: fonts.bold },
+  quickUnitLight: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.medium },
+  quickLabel: { color: colors.textMuted, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontFamily: fonts.extraBold },
+  quickValue: { color: colors.text, fontSize: 28, fontFamily: fonts.bold },
+  quickUnit: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.medium },
   focusHabitCard: { backgroundColor: colors.primarySoft, borderRadius: radius.xl, padding: 22, minHeight: 180, justifyContent: 'space-between', gap: 12 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
-  focusHabitName: { color: colors.text, fontSize: 22, lineHeight: 26, fontWeight: '700', letterSpacing: -0.5 },
-  focusHabitSchedule: { color: colors.textMuted, marginTop: 4, fontSize: 13 },
+  focusHabitName: { color: colors.text, fontSize: 22, lineHeight: 26, fontFamily: fonts.extraBold, letterSpacing: -0.5 },
+  focusHabitSchedule: { color: colors.textMuted, marginTop: 4, fontSize: 13, fontFamily: fonts.medium },
   arrow: { color: colors.text, fontSize: 22, opacity: 0.5 },
-  focusNumber: { color: colors.text, fontSize: 36, lineHeight: 40, letterSpacing: -1, fontWeight: '600' },
-  focusCaption: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  focusNumber: { color: colors.text, fontSize: 36, lineHeight: 40, letterSpacing: -1, fontFamily: fonts.extraBold },
+  focusCaption: { color: colors.textMuted, fontSize: 13, marginTop: 2, fontFamily: fonts.medium },
   track: { height: 6, borderRadius: 99, backgroundColor: colors.surfaceMuted, overflow: 'hidden', marginTop: 10 },
   fill: { height: '100%', borderRadius: 99, backgroundColor: colors.primary },
   focusStats: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 },
   focusSide: { alignItems: 'flex-end', paddingBottom: 2 },
-  focusSideValue: { color: colors.text, fontSize: 22, fontWeight: '700' },
+  focusSideValue: { color: colors.text, fontSize: 22, fontFamily: fonts.bold },
   dashboardLink: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  smallKicker: { color: colors.textMuted, fontSize: 10, letterSpacing: 1.2, fontWeight: '700', textTransform: 'uppercase' },
-  dashboardLinkTitle: { color: colors.text, fontSize: 18, fontWeight: '600', marginTop: 4 },
+  smallKicker: { color: colors.textMuted, fontSize: 10, letterSpacing: 1.2, fontFamily: fonts.extraBold, textTransform: 'uppercase' },
+  dashboardLinkTitle: { color: colors.text, fontSize: 18, fontFamily: fonts.bold, marginTop: 4 },
   arrowCircle: { width: 34, height: 34, borderRadius: 99, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  arrowCircleText: { color: colors.text, fontSize: 16 },
+  arrowCircleText: { color: colors.text, fontSize: 16, fontFamily: fonts.medium },
   chapterStrip: { backgroundColor: colors.primarySoft, borderRadius: radius.lg, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  chapterTitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 4 },
-  chapterDay: { color: colors.primary, fontWeight: '800', fontSize: 13 },
+  chapterTitle: { color: colors.text, fontSize: 18, fontFamily: fonts.extraBold, marginTop: 4 },
+  chapterDay: { color: colors.primary, fontFamily: fonts.extraBold, fontSize: 13 },
   sectionHeader: { marginTop: 16, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 4 },
-  sectionTitle: { color: colors.text, fontSize: 22, lineHeight: 26, fontWeight: '700', letterSpacing: -0.5, marginTop: 4 },
-  date: { color: colors.textMuted, fontSize: 12, fontWeight: '500' },
-  activityCard: { backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
-  activitySectionTitle: { color: colors.text, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderTopWidth: 1, borderTopColor: colors.border },
-  check: { width: 28, height: 28, borderRadius: 99, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  checkDone: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkText: { color: colors.background, fontWeight: '800' },
-  itemTitle: { color: colors.text, fontSize: 15, fontWeight: '600' },
-  itemDone: { textDecorationLine: 'line-through', color: colors.textMuted },
-  itemMeta: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-  muted: { color: colors.textMuted, padding: 16 },
-  sleepCard: { backgroundColor: colors.primarySoft, borderRadius: radius.xl, padding: 19, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  sleepValue: { color: colors.text, fontSize: 24, fontWeight: '500', marginTop: 5 },
-  sleepButton: { backgroundColor: colors.primary, borderRadius: 99, paddingHorizontal: 16, paddingVertical: 11 },
-  sleepButtonText: { color: colors.background, fontWeight: '700', fontSize: 12 },
+  sectionTitle: { color: colors.text, fontSize: 22, lineHeight: 26, fontFamily: fonts.extraBold, letterSpacing: -0.5, marginTop: 4 },
+  date: { color: colors.textMuted, fontSize: 13, fontFamily: fonts.bold },
+  activitySection: { marginVertical: 6 },
+  activitySectionTitle: { color: colors.text, fontSize: 13, fontFamily: fonts.extraBold, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  glassCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: radius.xl, borderWidth: 1 },
+  iconBox: { width: 44, height: 44, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
+  iconText: { fontSize: 20, fontFamily: fonts.extraBold },
+  glassCheck: { width: 30, height: 30, borderRadius: 99, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  checkText: { color: colors.background, fontFamily: fonts.extraBold },
+  itemTitle: { color: colors.text, fontSize: 16, fontFamily: fonts.bold },
+  itemDone: { textDecorationLine: 'line-through', opacity: 0.5 },
+  itemMeta: { fontSize: 12, marginTop: 4, fontFamily: fonts.medium },
+  muted: { color: colors.textMuted, padding: 16, fontFamily: fonts.regular },
+  sleepCard: { backgroundColor: colors.primarySoft, borderRadius: radius.xl, padding: 19, flexDirection: 'column', gap: 4 },
+  sleepValue: { color: colors.text, fontSize: 24, fontFamily: fonts.extraBold, marginTop: 5 },
+  sleepButton: { flex: 1, backgroundColor: colors.primary, borderRadius: 99, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center' },
+  sleepButtonDisabled: { opacity: 0.3 },
+  sleepButtonText: { color: colors.background, fontFamily: fonts.bold, fontSize: 13 },
   compareCard: { backgroundColor: colors.surface, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.border, padding: 18, gap: 13 },
   compareRow: { flexDirection: 'row', gap: 10 },
   compareItem: { flex: 1, backgroundColor: colors.surfaceMuted, borderRadius: radius.lg, padding: 14 },
-  compareDelta: { color: colors.text, fontSize: 28, fontWeight: '500' },
-  compareLabel: { color: colors.textMuted, fontSize: 11 },
-  compareNote: { color: colors.textMuted, fontStyle: 'italic', fontSize: 12 },
+  compareDelta: { color: colors.text, fontSize: 28, fontFamily: fonts.bold },
+  compareLabel: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.medium },
+  compareNote: { color: colors.textMuted, fontStyle: 'italic', fontSize: 12, fontFamily: fonts.regular },
   manageRow: { alignItems: 'center', paddingVertical: 4 },
   manageButton: { paddingHorizontal: 18, paddingVertical: 12, borderWidth: 1, borderColor: colors.border, borderRadius: 99 },
-  manageText: { color: colors.textMuted, fontWeight: '600', fontSize: 12 },
+  manageText: { color: colors.textMuted, fontFamily: fonts.bold, fontSize: 13 },
 });

@@ -7,7 +7,7 @@ import { JourneyScreen } from '../features/journey/JourneyScreen';
 import { ProfileNavigator } from '../features/profile/ProfileNavigator';
 import { ActivityComposer } from '../features/today/ActivityComposer';
 import { useComposerStore } from '../store/composerStore';
-import { colors } from '../theme/tokens';
+import { useTheme } from '../theme/ThemeContext';
 import { TabIcon } from './TabIcon';
 
 const TABS = [
@@ -22,7 +22,11 @@ const SWIPE_VELOCITY = 0.45;
 const nativeDriven = Platform.OS !== 'web';
 
 export function SwipeTabShell() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const { width } = useWindowDimensions();
+  // Constrain width on web to match DesktopWrapper's maxWidth: 480
+  const layoutWidth = Platform.OS === 'web' ? Math.min(width, 480) : width;
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
@@ -30,15 +34,15 @@ export function SwipeTabShell() {
 
   useEffect(() => { indexRef.current = activeIndex; }, [activeIndex]);
   useEffect(() => {
-    translateX.setValue(-activeIndex * width);
-  }, [activeIndex, translateX, width]);
+    translateX.setValue(-activeIndex * layoutWidth);
+  }, [activeIndex, translateX, layoutWidth]);
 
   const goTo = (nextIndex: number) => {
     const index = Math.max(0, Math.min(TABS.length - 1, nextIndex));
     indexRef.current = index;
     setActiveIndex(index);
     Animated.spring(translateX, {
-      toValue: -index * width,
+      toValue: -index * layoutWidth,
       useNativeDriver: nativeDriven,
       friction: 9,
       tension: 85,
@@ -54,7 +58,7 @@ export function SwipeTabShell() {
       translateX.stopAnimation();
     },
     onPanResponderMove: (_event, gesture) => {
-      const base = -indexRef.current * width;
+      const base = -indexRef.current * layoutWidth;
       const atStart = indexRef.current === 0 && gesture.dx > 0;
       const atEnd = indexRef.current === TABS.length - 1 && gesture.dx < 0;
       const movement = atStart || atEnd ? gesture.dx * 0.24 : gesture.dx;
@@ -68,14 +72,14 @@ export function SwipeTabShell() {
       else goTo(indexRef.current);
     },
     onPanResponderTerminate: () => goTo(indexRef.current),
-  }), [translateX, width]);
+  }), [translateX, layoutWidth]);
 
   return (
     <View style={styles.root}>
       <View style={styles.pager} {...panResponder.panHandlers}>
-        <Animated.View style={[styles.row, { width: width * TABS.length, transform: [{ translateX }] }]}>
+        <Animated.View style={[styles.row, { width: layoutWidth * TABS.length, transform: [{ translateX }] }]}>
           {TABS.map(({ name, component: Component }) => (
-            <View key={name} style={{ width, flex: 1 }}>
+            <View key={name} style={{ width: layoutWidth, flex: 1 }}>
               <Component />
             </View>
           ))}
@@ -114,7 +118,7 @@ export function SwipeTabShell() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   pager: { flex: 1, overflow: 'hidden' },
   row: { flex: 1, flexDirection: 'row' },
@@ -122,7 +126,7 @@ const styles = StyleSheet.create({
   navItem: { flex: 1, height: 54, alignItems: 'center', justifyContent: 'center', gap: 2 },
   navItemAdd: { flex: 1.2, height: 54, alignItems: 'center', justifyContent: 'center', marginTop: -15 },
   addCircle: { width: 50, height: 50, borderRadius: 99, backgroundColor: colors.textPrimary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-  addText: { color: 'white', fontSize: 32, lineHeight: 36, textAlign: 'center' },
+  addText: { color: colors.background, fontSize: 32, lineHeight: 36, textAlign: 'center' },
   label: { color: colors.textMuted, fontSize: 10, fontWeight: '600' },
   labelActive: { color: colors.textPrimary, fontWeight: '800' },
   indicator: { width: 20, height: 2, borderRadius: 99, backgroundColor: 'transparent', marginTop: 2 },

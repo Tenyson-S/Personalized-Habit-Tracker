@@ -1,9 +1,9 @@
 import React from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../services/api';
 import { Card } from '../../components/Card';
-import { colors } from '../../theme/tokens';
+import { colors, fonts } from '../../theme/tokens';
 
 export function ActivityManager({onChanged, onEdit}:{onChanged:()=>void, onEdit:(type:'habits'|'dailies'|'tasks', item:any)=>void}) {
   const habits = useQuery({queryKey:['manage-habits'],queryFn:async()=>(await api.get('/habits/')).data});
@@ -18,7 +18,14 @@ export function ActivityManager({onChanged, onEdit}:{onChanged:()=>void, onEdit:
   }
 
   async function remove(type:'habits'|'dailies'|'tasks',id:string,title:string){
-    Alert.alert('Delete?',`Remove “${title}”?`,[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{await api.delete(`/${type}/${id}/`);onChanged();}}]);
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Remove “${title}”?`)) {
+        await api.delete(`/${type}/${id}/`);
+        onChanged();
+      }
+    } else {
+      Alert.alert('Delete?',`Remove “${title}”?`,[{text:'Cancel',style:'cancel'},{text:'Delete',style:'destructive',onPress:async()=>{await api.delete(`/${type}/${id}/`);onChanged();}}]);
+    }
   }
 
   const sections = [['Habits', habits.data??[], 'habits'], ['Dailies', dailies.data??[], 'dailies'], ['Tasks', tasks.data??[], 'tasks']] as const;
@@ -56,15 +63,15 @@ export function ActivityManager({onChanged, onEdit}:{onChanged:()=>void, onEdit:
 }
 
 const styles = StyleSheet.create({
-  title:{fontSize:18,fontWeight:'800',color:colors.text},
-  muted:{color:colors.textMuted},
+  title:{fontSize:18,fontFamily:fonts.extraBold,color:colors.text},
+  muted:{color:colors.textMuted,fontFamily:fonts.regular},
   section:{gap:8,marginTop:12},
-  label:{fontSize:12,fontWeight:'800',letterSpacing:1,color:colors.primary},
+  label:{fontSize:12,fontFamily:fonts.extraBold,letterSpacing:1,color:colors.primary},
   row:{flexDirection:'row',alignItems:'center',paddingVertical:7,borderTopWidth:1,borderTopColor:colors.border},
-  item:{fontWeight:'700',color:colors.text},
-  meta:{fontSize:11,color:colors.textMuted,marginTop:2},
+  item:{fontFamily:fonts.bold,color:colors.text},
+  meta:{fontSize:11,color:colors.textMuted,fontFamily:fonts.medium,marginTop:2},
   actions:{flexDirection:'row',gap:12},
-  edit:{color:colors.ink,fontWeight:'700'},
-  pause:{color:colors.primary,fontWeight:'700'},
-  delete:{color:colors.danger,fontWeight:'700'}
+  edit:{color:colors.ink,fontFamily:fonts.bold},
+  pause:{color:colors.primary,fontFamily:fonts.bold},
+  delete:{color:colors.danger,fontFamily:fonts.bold}
 });

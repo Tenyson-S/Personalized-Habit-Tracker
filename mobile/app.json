@@ -20,7 +20,7 @@
     "backgroundColor": "#F5F2EA",
     "icon": "./assets/icon.png",
     "splash": {
-      "image": "./assets/hearth-splash.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#F5F2EA"
     },
@@ -35,7 +35,8 @@
       "title": "Stealth Track",
       "description": "Track quietly. Improve consistently.",
       "themeColor": "#0D0F0E",
-      "backgroundColor": "#0D0F0E"
+      "backgroundColor": "#0D0F0E",
+      "favicon": "./assets/favicon.png"
     }
   }
 }
