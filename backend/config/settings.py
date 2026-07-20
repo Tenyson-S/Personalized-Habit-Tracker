@@ -105,9 +105,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 import os
 os.makedirs(STATIC_ROOT, exist_ok=True)
+WHITENOISE_MANIFEST_STRICT = False
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
