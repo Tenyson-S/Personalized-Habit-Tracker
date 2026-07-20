@@ -27,7 +27,7 @@ function getDb(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-export const webQueue: MutationQueue = {
+export const mutationQueue: MutationQueue = {
   initQueue: async () => {
     if (typeof window !== 'undefined') {
       await getDb();

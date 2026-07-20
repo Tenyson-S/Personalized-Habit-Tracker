@@ -18,6 +18,8 @@ export interface MutationQueue {
   clearUserMutations: (userId: string) => Promise<void>;
 }
 
-export const mutationQueue: MutationQueue = Platform.OS === 'web'
-  ? require('./mutationQueue.web').webQueue
-  : require('./mutationQueue.native').nativeQueue;
+export const mutationQueue: MutationQueue = new Proxy({} as MutationQueue, {
+  get: () => {
+    throw new Error('Platform-specific mutationQueue file was not loaded by Metro.');
+  }
+});

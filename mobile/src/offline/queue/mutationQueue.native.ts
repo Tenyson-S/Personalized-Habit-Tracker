@@ -10,7 +10,7 @@ async function getDb() {
   return dbInstance;
 }
 
-export const nativeQueue: MutationQueue = {
+export const mutationQueue: MutationQueue = {
   initQueue: async () => {
     const db = await getDb();
     await db.execAsync(`

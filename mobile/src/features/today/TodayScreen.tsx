@@ -9,6 +9,7 @@ import { radius, spacing, fonts } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
 import { useComposerStore } from '../../store/composerStore';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { Chapter, HabitDashboard as HabitDashboardPayload, TodayPayload, User } from '../../types/api';
 
 function formatMinutes(value?: number | null) {
@@ -46,7 +47,8 @@ function getActivityColor(type: string, category: string) {
 
 export function TodayScreen() {
   const { colors } = useTheme();
-  const styles = useStyles(colors);
+  const { isMobile, isTablet, isDesktop } = useResponsive();
+  const styles = useStyles(colors, isDesktop, isTablet);
   const queryClient = useQueryClient();
   const [manageOpen, setManageOpen] = useState(false);
   const [dashboardOpen, setDashboardOpen] = useState(false);
@@ -177,102 +179,188 @@ export function TodayScreen() {
             <Text style={styles.quickValue}>{Math.round(habitDashboard.data?.summary.average_consistency ?? 0)}%</Text>
             <Text style={styles.quickUnit}>30-day average</Text>
           </View>
-        </View>
-
-        {focusHabit ? (
-          <Pressable onPress={() => setDashboardOpen(true)} style={styles.focusHabitCard}>
-            <View style={styles.rowBetween}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.focusHabitName}>{focusHabit.name}</Text>
-                <Text style={styles.focusHabitSchedule}>{focusHabit.schedule_label}</Text>
-              </View>
-              <Text style={styles.arrow}>↗</Text>
+          {(isTablet || isDesktop) && (
+            <View style={[styles.quickTile, { backgroundColor: colors.primarySoft }]}>
+              <Text style={styles.quickLabel}>Progress</Text>
+              <Text style={styles.quickValue}>{data.progress_percent}%</Text>
+              <Text style={styles.quickUnit}>done today</Text>
             </View>
-            {focusHabit.foundation.required && !focusHabit.foundation.established ? (
-              <>
-                <Text style={styles.focusNumber}>{focusHabit.foundation.progress} / 21</Text>
-                <Text style={styles.focusCaption}>foundation check-ins</Text>
-                <View style={styles.track}><View style={[styles.fill, { width: `${focusHabit.foundation.percent}%` }]} /></View>
-              </>
-            ) : (
-              <View style={styles.focusStats}>
-                <View><Text style={styles.focusNumber}>{focusHabit.metrics.persistence_streak_weeks}</Text><Text style={styles.focusCaption}>weeks persistent</Text></View>
-                <View style={styles.focusSide}><Text style={styles.focusSideValue}>{Math.round(focusHabit.metrics.consistency_30_days)}%</Text><Text style={styles.focusCaption}>consistent</Text></View>
+          )}
+        </View>
+
+        {/* Two-column layout for tablet/desktop */}
+        {(isTablet || isDesktop) ? (
+          <View style={styles.twoCol}>
+            {/* Left column: activities */}
+            <View style={styles.leftCol}>
+              {focusHabit ? (
+                <Pressable onPress={() => setDashboardOpen(true)} style={styles.focusHabitCard}>
+                  <View style={styles.rowBetween}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.focusHabitName}>{focusHabit.name}</Text>
+                      <Text style={styles.focusHabitSchedule}>{focusHabit.schedule_label}</Text>
+                    </View>
+                    <Text style={styles.arrow}>↗</Text>
+                  </View>
+                  {focusHabit.foundation.required && !focusHabit.foundation.established ? (
+                    <>
+                      <Text style={styles.focusNumber}>{focusHabit.foundation.progress} / 21</Text>
+                      <Text style={styles.focusCaption}>foundation check-ins</Text>
+                      <View style={styles.track}><View style={[styles.fill, { width: `${focusHabit.foundation.percent}%` }]} /></View>
+                    </>
+                  ) : (
+                    <View style={styles.focusStats}>
+                      <View><Text style={styles.focusNumber}>{focusHabit.metrics.persistence_streak_weeks}</Text><Text style={styles.focusCaption}>weeks persistent</Text></View>
+                      <View style={styles.focusSide}><Text style={styles.focusSideValue}>{Math.round(focusHabit.metrics.consistency_30_days)}%</Text><Text style={styles.focusCaption}>consistent</Text></View>
+                    </View>
+                  )}
+                </Pressable>
+              ) : null}
+
+              <View style={styles.sectionHeader}>
+                <View><Text style={styles.smallKicker}>TODAY</Text><Text style={styles.sectionTitle}>Scheduled for you</Text></View>
+                <Text style={styles.date}>{new Date(`${data.date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text>
               </View>
-            )}
-          </Pressable>
-        ) : null}
 
-        <Pressable onPress={() => setDashboardOpen(true)} style={styles.dashboardLink}>
-          <View><Text style={styles.smallKicker}>HABIT DASHBOARD</Text><Text style={styles.dashboardLinkTitle}>Records & streaks</Text></View>
-          <View style={styles.arrowCircle}><Text style={styles.arrowCircleText}>↗</Text></View>
-        </Pressable>
+              <ActivitySection title="Habits" empty="No habits scheduled today." items={data.habits.map((habit) => ({ id: habit.id, title: habit.name, meta: habit.life_area.replaceAll('_', ' ').toLowerCase(), category: habit.life_area, completed: Boolean(habit.completion?.completed), onPress: () => completeHabit.mutate({ id: habit.id, date: data.date, completed: !habit.completion?.completed }) }))} styles={styles} />
+              <ActivitySection title="Dailies" empty="No dailies scheduled today." items={data.dailies.map((daily) => ({ id: daily.id, title: daily.title, meta: daily.preferred_time ? daily.preferred_time.slice(0, 5) : daily.life_area.replaceAll('_', ' ').toLowerCase(), category: daily.life_area, completed: Boolean(daily.completion?.completed), onPress: () => completeDaily.mutate({ id: daily.id, date: data.date, completed: !daily.completion?.completed }) }))} styles={styles} />
+              <ActivitySection title="Tasks" empty="Nothing waiting for you here." items={data.tasks.map((task) => ({ id: task.id, title: task.title, meta: task.life_area ? task.life_area.replaceAll('_', ' ').toLowerCase() : task.priority.toLowerCase(), category: task.life_area || '', completed: task.completed, onPress: () => completeTask.mutate({ id: task.id, completed: !task.completed }) }))} styles={styles} />
 
-        {currentChapter.data ? (
-          <View style={styles.chapterStrip}>
-            <View>
-              <Text style={styles.smallKicker}>CURRENT CHAPTER</Text>
-              <Text style={styles.chapterTitle}>{currentChapter.data.title}</Text>
+              <View style={styles.manageRow}>
+                <Pressable onPress={() => setManageOpen(!manageOpen)} style={styles.manageButton}><Text style={styles.manageText}>{manageOpen ? 'Hide activity manager' : 'Manage habits, dailies & tasks'}</Text></Pressable>
+              </View>
+              {manageOpen ? <ActivityManager
+                onEdit={(type, data) => { useComposerStore.getState().open({id: data.id, type: type === 'tasks' ? 'task' : type === 'dailies' ? 'daily' : 'habit', data}); }}
+                onChanged={async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['manage-habits'] }), queryClient.invalidateQueries({ queryKey: ['manage-dailies'] }), queryClient.invalidateQueries({ queryKey: ['manage-tasks'] }), refresh()]); }}
+              /> : null}
             </View>
-            <Text style={styles.chapterDay}>Day {currentChapter.data.days_lived}</Text>
+
+            {/* Right column: stats/sleep/compare */}
+            <View style={styles.rightCol}>
+              <Pressable onPress={() => setDashboardOpen(true)} style={styles.dashboardLink}>
+                <View><Text style={styles.smallKicker}>HABIT DASHBOARD</Text><Text style={styles.dashboardLinkTitle}>Records & streaks</Text></View>
+                <View style={styles.arrowCircle}><Text style={styles.arrowCircleText}>↗</Text></View>
+              </Pressable>
+
+              {currentChapter.data ? (
+                <View style={styles.chapterStrip}>
+                  <View>
+                    <Text style={styles.smallKicker}>CURRENT CHAPTER</Text>
+                    <Text style={styles.chapterTitle}>{currentChapter.data.title}</Text>
+                  </View>
+                  <Text style={styles.chapterDay}>Day {currentChapter.data.days_lived}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.sleepCard}>
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={styles.smallKicker}>REST TRACKER</Text>
+                  <Text style={styles.sleepValue}>{sleepCurrent.data ? 'You are resting…' : formatMinutes(data.sleep?.duration_minutes)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <Pressable onPress={() => !sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !!sleepCurrent.data} style={[styles.sleepButton, !!sleepCurrent.data && styles.sleepButtonDisabled]}>
+                    <Text style={styles.sleepButtonText}>Start sleep</Text>
+                  </Pressable>
+                  <Pressable onPress={() => sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !sleepCurrent.data} style={[styles.sleepButton, !sleepCurrent.data && styles.sleepButtonDisabled]}>
+                    <Text style={styles.sleepButtonText}>Wake up</Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              <View style={styles.compareCard}>
+                <Text style={styles.smallKicker}>YESTERDAY → TODAY</Text>
+                <View style={styles.compareRow}>
+                  <CompareItem label="Habits" delta={data.comparison.habit_delta} styles={styles} />
+                  <CompareItem label="Tasks" delta={data.comparison.task_delta} styles={styles} />
+                </View>
+                <Text style={styles.compareNote}>A comparison, not a score.</Text>
+              </View>
+            </View>
           </View>
-        ) : null}
+        ) : (
+          // ── Mobile single-column ──────────────────────────────────────────
+          <>
+            {focusHabit ? (
+              <Pressable onPress={() => setDashboardOpen(true)} style={styles.focusHabitCard}>
+                <View style={styles.rowBetween}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.focusHabitName}>{focusHabit.name}</Text>
+                    <Text style={styles.focusHabitSchedule}>{focusHabit.schedule_label}</Text>
+                  </View>
+                  <Text style={styles.arrow}>↗</Text>
+                </View>
+                {focusHabit.foundation.required && !focusHabit.foundation.established ? (
+                  <>
+                    <Text style={styles.focusNumber}>{focusHabit.foundation.progress} / 21</Text>
+                    <Text style={styles.focusCaption}>foundation check-ins</Text>
+                    <View style={styles.track}><View style={[styles.fill, { width: `${focusHabit.foundation.percent}%` }]} /></View>
+                  </>
+                ) : (
+                  <View style={styles.focusStats}>
+                    <View><Text style={styles.focusNumber}>{focusHabit.metrics.persistence_streak_weeks}</Text><Text style={styles.focusCaption}>weeks persistent</Text></View>
+                    <View style={styles.focusSide}><Text style={styles.focusSideValue}>{Math.round(focusHabit.metrics.consistency_30_days)}%</Text><Text style={styles.focusCaption}>consistent</Text></View>
+                  </View>
+                )}
+              </Pressable>
+            ) : null}
 
-        <View style={styles.sectionHeader}>
-          <View><Text style={styles.smallKicker}>TODAY</Text><Text style={styles.sectionTitle}>Scheduled for you</Text></View>
-          <Text style={styles.date}>{new Date(`${data.date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text>
-        </View>
-
-        <ActivitySection
-          title="Habits"
-          empty="No habits scheduled today."
-          items={data.habits.map((habit) => ({ id: habit.id, title: habit.name, meta: habit.life_area.replaceAll('_', ' ').toLowerCase(), category: habit.life_area, completed: Boolean(habit.completion?.completed), onPress: () => completeHabit.mutate({ id: habit.id, date: data.date, completed: !habit.completion?.completed }) }))}
-          styles={styles}
-        />
-        <ActivitySection
-          title="Dailies"
-          empty="No dailies scheduled today."
-          items={data.dailies.map((daily) => ({ id: daily.id, title: daily.title, meta: daily.preferred_time ? daily.preferred_time.slice(0, 5) : daily.life_area.replaceAll('_', ' ').toLowerCase(), category: daily.life_area, completed: Boolean(daily.completion?.completed), onPress: () => completeDaily.mutate({ id: daily.id, date: data.date, completed: !daily.completion?.completed }) }))}
-          styles={styles}
-        />
-        <ActivitySection
-          title="Tasks"
-          empty="Nothing waiting for you here."
-          items={data.tasks.map((task) => ({ id: task.id, title: task.title, meta: task.life_area ? task.life_area.replaceAll('_', ' ').toLowerCase() : task.priority.toLowerCase(), category: task.life_area || '', completed: task.completed, onPress: () => completeTask.mutate({ id: task.id, completed: !task.completed }) }))}
-          styles={styles}
-        />
-
-        <View style={styles.sleepCard}>
-          <View style={{ marginBottom: 12 }}>
-            <Text style={styles.smallKicker}>REST TRACKER</Text>
-            <Text style={styles.sleepValue}>{sleepCurrent.data ? 'You are resting…' : formatMinutes(data.sleep?.duration_minutes)}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable onPress={() => !sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !!sleepCurrent.data} style={[styles.sleepButton, !!sleepCurrent.data && styles.sleepButtonDisabled]}>
-              <Text style={styles.sleepButtonText}>Start sleep</Text>
+            <Pressable onPress={() => setDashboardOpen(true)} style={styles.dashboardLink}>
+              <View><Text style={styles.smallKicker}>HABIT DASHBOARD</Text><Text style={styles.dashboardLinkTitle}>Records & streaks</Text></View>
+              <View style={styles.arrowCircle}><Text style={styles.arrowCircleText}>↗</Text></View>
             </Pressable>
-            <Pressable onPress={() => sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !sleepCurrent.data} style={[styles.sleepButton, !sleepCurrent.data && styles.sleepButtonDisabled]}>
-              <Text style={styles.sleepButtonText}>Wake up</Text>
-            </Pressable>
-          </View>
-        </View>
 
-        <View style={styles.compareCard}>
-          <Text style={styles.smallKicker}>YESTERDAY → TODAY</Text>
-          <View style={styles.compareRow}>
-            <CompareItem label="Habits" delta={data.comparison.habit_delta} styles={styles} />
-            <CompareItem label="Tasks" delta={data.comparison.task_delta} styles={styles} />
-          </View>
-          <Text style={styles.compareNote}>A comparison, not a score.</Text>
-        </View>
+            {currentChapter.data ? (
+              <View style={styles.chapterStrip}>
+                <View>
+                  <Text style={styles.smallKicker}>CURRENT CHAPTER</Text>
+                  <Text style={styles.chapterTitle}>{currentChapter.data.title}</Text>
+                </View>
+                <Text style={styles.chapterDay}>Day {currentChapter.data.days_lived}</Text>
+              </View>
+            ) : null}
 
-        <View style={styles.manageRow}>
-          <Pressable onPress={() => setManageOpen(!manageOpen)} style={styles.manageButton}><Text style={styles.manageText}>{manageOpen ? 'Hide activity manager' : 'Manage habits, dailies & tasks'}</Text></Pressable>
-        </View>
-        {manageOpen ? <ActivityManager 
-          onEdit={(type, data) => { useComposerStore.getState().open({id: data.id, type: type === 'tasks' ? 'task' : type === 'dailies' ? 'daily' : 'habit', data}); }} 
-          onChanged={async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['manage-habits'] }), queryClient.invalidateQueries({ queryKey: ['manage-dailies'] }), queryClient.invalidateQueries({ queryKey: ['manage-tasks'] }), refresh()]); }} 
-        /> : null}
+            <View style={styles.sectionHeader}>
+              <View><Text style={styles.smallKicker}>TODAY</Text><Text style={styles.sectionTitle}>Scheduled for you</Text></View>
+              <Text style={styles.date}>{new Date(`${data.date}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text>
+            </View>
+
+            <ActivitySection title="Habits" empty="No habits scheduled today." items={data.habits.map((habit) => ({ id: habit.id, title: habit.name, meta: habit.life_area.replaceAll('_', ' ').toLowerCase(), category: habit.life_area, completed: Boolean(habit.completion?.completed), onPress: () => completeHabit.mutate({ id: habit.id, date: data.date, completed: !habit.completion?.completed }) }))} styles={styles} />
+            <ActivitySection title="Dailies" empty="No dailies scheduled today." items={data.dailies.map((daily) => ({ id: daily.id, title: daily.title, meta: daily.preferred_time ? daily.preferred_time.slice(0, 5) : daily.life_area.replaceAll('_', ' ').toLowerCase(), category: daily.life_area, completed: Boolean(daily.completion?.completed), onPress: () => completeDaily.mutate({ id: daily.id, date: data.date, completed: !daily.completion?.completed }) }))} styles={styles} />
+            <ActivitySection title="Tasks" empty="Nothing waiting for you here." items={data.tasks.map((task) => ({ id: task.id, title: task.title, meta: task.life_area ? task.life_area.replaceAll('_', ' ').toLowerCase() : task.priority.toLowerCase(), category: task.life_area || '', completed: task.completed, onPress: () => completeTask.mutate({ id: task.id, completed: !task.completed }) }))} styles={styles} />
+
+            <View style={styles.sleepCard}>
+              <View style={{ marginBottom: 12 }}>
+                <Text style={styles.smallKicker}>REST TRACKER</Text>
+                <Text style={styles.sleepValue}>{sleepCurrent.data ? 'You are resting…' : formatMinutes(data.sleep?.duration_minutes)}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Pressable onPress={() => !sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !!sleepCurrent.data} style={[styles.sleepButton, !!sleepCurrent.data && styles.sleepButtonDisabled]}>
+                  <Text style={styles.sleepButtonText}>Start sleep</Text>
+                </Pressable>
+                <Pressable onPress={() => sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !sleepCurrent.data} style={[styles.sleepButton, !sleepCurrent.data && styles.sleepButtonDisabled]}>
+                  <Text style={styles.sleepButtonText}>Wake up</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View style={styles.compareCard}>
+              <Text style={styles.smallKicker}>YESTERDAY → TODAY</Text>
+              <View style={styles.compareRow}>
+                <CompareItem label="Habits" delta={data.comparison.habit_delta} styles={styles} />
+                <CompareItem label="Tasks" delta={data.comparison.task_delta} styles={styles} />
+              </View>
+              <Text style={styles.compareNote}>A comparison, not a score.</Text>
+            </View>
+
+            <View style={styles.manageRow}>
+              <Pressable onPress={() => setManageOpen(!manageOpen)} style={styles.manageButton}><Text style={styles.manageText}>{manageOpen ? 'Hide activity manager' : 'Manage habits, dailies & tasks'}</Text></Pressable>
+            </View>
+            {manageOpen ? <ActivityManager
+              onEdit={(type, data) => { useComposerStore.getState().open({id: data.id, type: type === 'tasks' ? 'task' : type === 'dailies' ? 'daily' : 'habit', data}); }}
+              onChanged={async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ['manage-habits'] }), queryClient.invalidateQueries({ queryKey: ['manage-dailies'] }), queryClient.invalidateQueries({ queryKey: ['manage-tasks'] }), refresh()]); }}
+            /> : null}
+          </>
+        )}
       </Screen>
 
       <HabitDashboard visible={dashboardOpen} onClose={() => setDashboardOpen(false)} />
@@ -313,29 +401,33 @@ function CompareItem({ label, delta, styles }: { label: string; delta: number; s
   return <View style={styles.compareItem}><Text style={styles.compareDelta}>{delta > 0 ? '+' : ''}{delta}</Text><Text style={styles.compareLabel}>{label}</Text></View>;
 }
 
-const useStyles = (colors: ThemeColors) => StyleSheet.create({
+const useStyles = (colors: ThemeColors, isDesktop = false, isTablet = false) => StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-  page: { padding: 20, gap: 16 },
+  page: { padding: isDesktop ? 28 : 20, gap: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   greeting: { color: colors.textMuted, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', fontFamily: fonts.extraBold },
-  name: { color: colors.text, fontSize: 22, fontFamily: fonts.extraBold, marginTop: 2 },
+  name: { color: colors.text, fontSize: isDesktop ? 26 : 22, fontFamily: fonts.extraBold, marginTop: 2 },
   rule: { height: 1, backgroundColor: colors.border, opacity: 0.8 },
   heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 12 },
   heroKicker: { color: colors.textMuted, fontSize: 16, fontFamily: fonts.medium, marginBottom: 2 },
-  heroTitle: { color: colors.text, fontSize: 34, lineHeight: 38, letterSpacing: -1, fontFamily: fonts.extraBold },
+  heroTitle: { color: colors.text, fontSize: isDesktop ? 44 : 34, lineHeight: isDesktop ? 50 : 38, letterSpacing: -1, fontFamily: fonts.extraBold },
   dayProgress: { alignItems: 'flex-end', paddingBottom: 5 },
   dayProgressValue: { color: colors.text, fontSize: 24, fontFamily: fonts.extraBold },
   dayProgressLabel: { color: colors.textMuted, fontSize: 11, fontFamily: fonts.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
   quickGrid: { flexDirection: 'row', gap: 12 },
-  quickTile: { flex: 1, minHeight: 110, borderRadius: radius.lg, padding: 16, justifyContent: 'space-between' },
+  quickTile: { flex: 1, minHeight: isDesktop ? 130 : 110, borderRadius: radius.lg, padding: 16, justifyContent: 'space-between' },
   blackTile: { backgroundColor: colors.elevatedBackground },
   butterTile: { backgroundColor: colors.surfaceMuted },
   quickLabelLight: { color: colors.textMuted, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontFamily: fonts.extraBold },
-  quickValueLight: { color: colors.text, fontSize: 28, fontFamily: fonts.bold },
+  quickValueLight: { color: colors.text, fontSize: isDesktop ? 34 : 28, fontFamily: fonts.bold },
   quickUnitLight: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.medium },
   quickLabel: { color: colors.textMuted, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontFamily: fonts.extraBold },
-  quickValue: { color: colors.text, fontSize: 28, fontFamily: fonts.bold },
+  quickValue: { color: colors.text, fontSize: isDesktop ? 34 : 28, fontFamily: fonts.bold },
   quickUnit: { color: colors.textMuted, fontSize: 12, fontFamily: fonts.medium },
+  // Two-column layout
+  twoCol: { flexDirection: 'row', gap: 20, alignItems: 'flex-start' },
+  leftCol: { flex: 1.4, gap: 16 },
+  rightCol: { flex: 1, gap: 16 },
   focusHabitCard: { backgroundColor: colors.primarySoft, borderRadius: radius.xl, padding: 22, minHeight: 180, justifyContent: 'space-between', gap: 12 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
   focusHabitName: { color: colors.text, fontSize: 22, lineHeight: 26, fontFamily: fonts.extraBold, letterSpacing: -0.5 },

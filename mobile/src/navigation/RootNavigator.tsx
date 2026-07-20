@@ -29,7 +29,16 @@ export function RootNavigator() {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, padding: 20 }}>
         <Text style={{ color: colors.text, textAlign: 'center', marginBottom: 12 }}>Could not connect to the server.</Text>
-        <Text style={{ color: colors.textMuted, textAlign: 'center' }}>Please check your internet connection or try restarting the app.</Text>
+        <Text style={{ color: colors.textMuted, textAlign: 'center', marginBottom: 24 }}>Please check your internet connection or try restarting the app.</Text>
+        
+        <Text 
+          style={{ color: colors.primary, fontWeight: '600', padding: 12 }} 
+          onPress={async () => {
+            await useAuthStore.getState().signOut();
+          }}
+        >
+          Sign Out
+        </Text>
       </View>
     );
   }

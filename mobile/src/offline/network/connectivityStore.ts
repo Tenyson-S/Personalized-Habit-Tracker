@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { useAuthStore } from '../../store/authStore';
+import { processSyncQueue } from '../sync/syncEngine';
 
 type ConnectivityState = {
   isConnected: boolean;
@@ -9,7 +10,7 @@ type ConnectivityState = {
   connectionType: string | null;
   isSyncing: boolean;
   pendingMutationCount: number;
-  
+
   setSyncing: (isSyncing: boolean) => void;
   setPendingCount: (count: number) => void;
   initConnectivityListener: () => () => void;
@@ -39,11 +40,10 @@ export const useConnectivityStore = create<ConnectivityState>((set, get) => ({
 
       if (isReachable) {
         set({ lastOnlineAt: new Date() });
-        // If we just came online and we are authenticated, we should trigger a sync
+        // If we just came online and we are authenticated, trigger a sync
         if (wasReachable === false) {
           const auth = useAuthStore.getState();
           if (auth.tokens && auth.userId) {
-            const { processSyncQueue } = require('../sync/syncEngine');
             processSyncQueue(auth.userId);
           }
         }

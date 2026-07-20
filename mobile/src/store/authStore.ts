@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import type { Tokens } from '../types/api';
 import { clearTokens, readTokens, saveTokens } from '../services/tokenStore';
+// Static imports so Metro can correctly resolve the platform-specific files
+// (.web.ts / .native.ts). Dynamic await import() does NOT work for this.
+import { mutationQueue } from '../offline/queue/mutationQueue';
+import { processSyncQueue } from '../offline/sync/syncEngine';
+import { queryClient } from '../services/queryClient';
 
 type AuthState = {
   hydrated: boolean;
@@ -31,12 +36,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       const tokens = await readTokens();
       const userId = decodeUserId(tokens?.access || null);
       set({ tokens, userId, hydrated: true });
-      
+
       if (userId) {
-        const { mutationQueue } = require('../offline/queue/mutationQueue');
         await mutationQueue.initQueue();
-        
-        const { processSyncQueue } = require('../offline/sync/syncEngine');
         processSyncQueue(userId);
       }
     } catch (error) {
@@ -46,17 +48,21 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   setTokens: async (tokens) => {
     await saveTokens(tokens);
-    set({ tokens, userId: decodeUserId(tokens.access) });
+    const userId = decodeUserId(tokens.access);
+    set({ tokens, userId });
+
+    // Initialize queue for the newly logged-in user
+    if (userId) {
+      await mutationQueue.initQueue();
+      processSyncQueue(userId);
+    }
   },
   signOut: async () => {
     await clearTokens();
-    
+
     // Clear in-memory cache to prevent data leak to guest state.
-    // The persisted cache in AsyncStorage remains securely isolated via the userId key prefix,
-    // so it will be restored if the user logs back in.
-    const { queryClient } = require('../services/queryClient');
     queryClient.clear();
-    
+
     set({ tokens: null, userId: null });
   },
 }));

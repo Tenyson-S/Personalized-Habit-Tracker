@@ -8,6 +8,7 @@ import { api } from '../../services/api';
 import { radius, spacing } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
+import { useResponsive } from '../../hooks/useResponsive';
 import type { VillageBuilding, VillageRewardEvent, VillageWorld } from '../../types/api';
 import { VillageWorldScene } from './VillageWorldScene';
 
@@ -37,6 +38,7 @@ function eventPlace(event: VillageRewardEvent, buildings: VillageBuilding[]) {
 
 export function VillageScreen() {
   const { colors } = useTheme();
+  const { isMobile, isTablet, isDesktop } = useResponsive();
   const styles = useStyles(colors);
   const world = useQuery({
     queryKey: ['village'],
@@ -87,11 +89,30 @@ export function VillageScreen() {
         </Pressable>
       </View>
 
-      <VillageWorldScene
-        world={data}
-        selectedKey={selectedBuilding?.key ?? null}
-        onSelect={(building) => setSelectedKey(building.key)}
-      />
+      {/* Tablet/Desktop: scene + building side by side */}
+      {(isTablet || isDesktop) ? (
+        <View style={styles.sceneRow}>
+          <View style={styles.sceneLeft}>
+            <VillageWorldScene
+              world={data}
+              selectedKey={selectedBuilding?.key ?? null}
+              onSelect={(building) => setSelectedKey(building.key)}
+            />
+          </View>
+          <View style={styles.sceneRight}>
+            {selectedBuilding && <BuildingStory building={selectedBuilding} styles={styles} />}
+          </View>
+        </View>
+      ) : (
+        <>
+          <VillageWorldScene
+            world={data}
+            selectedKey={selectedBuilding?.key ?? null}
+            onSelect={(building) => setSelectedKey(building.key)}
+          />
+          {selectedBuilding && <BuildingStory building={selectedBuilding} styles={styles} />}
+        </>
+      )}
 
       <View style={styles.reflectionCard}>
         <View style={styles.reflectionTopline}>
@@ -106,31 +127,34 @@ export function VillageScreen() {
         </View>
       </View>
 
-      {selectedBuilding && <BuildingStory building={selectedBuilding} styles={styles} />}
-
       <QuietProgress world={data} styles={styles} />
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionEyebrow}>RECENT TRACES</Text>
-        <Text style={styles.sectionTitle}>What the village remembers</Text>
-        <Text style={styles.muted}>No feed. Just a few real-life actions that became part of the world.</Text>
-      </View>
+      {/* Bottom row: two-column on desktop */}
+      <View style={(isTablet || isDesktop) ? styles.bottomRow : undefined}>
+        <View style={(isTablet || isDesktop) ? styles.bottomLeft : undefined}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionEyebrow}>RECENT TRACES</Text>
+            <Text style={styles.sectionTitle}>What the village remembers</Text>
+            <Text style={styles.muted}>No feed. Just a few real-life actions that became part of the world.</Text>
+          </View>
 
-      <Card>
-        {recentEvents.length === 0 ? (
-          <Text style={styles.muted}>Live your day. The first trace will appear here when something real happens.</Text>
-        ) : (
-          recentEvents.map((event, index) => (
-            <View key={event.id} style={[styles.traceRow, index !== recentEvents.length - 1 && styles.traceBorder]}>
-              <View style={styles.traceMarker} />
-              <View style={styles.traceCopy}>
-                <Text style={styles.traceTitle}>{event.title}</Text>
-                <Text style={styles.traceMeta}>{event.date} · {eventPlace(event, data.buildings)}</Text>
-              </View>
-            </View>
-          ))
-        )}
-      </Card>
+          <Card>
+            {recentEvents.length === 0 ? (
+              <Text style={styles.muted}>Live your day. The first trace will appear here when something real happens.</Text>
+            ) : (
+              recentEvents.map((event, index) => (
+                <View key={event.id} style={[styles.traceRow, index !== recentEvents.length - 1 && styles.traceBorder]}>
+                  <View style={styles.traceMarker} />
+                  <View style={styles.traceCopy}>
+                    <Text style={styles.traceTitle}>{event.title}</Text>
+                    <Text style={styles.traceMeta}>{event.date} · {eventPlace(event, data.buildings)}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </Card>
+        </View>
+      </View>
 
       <Text style={styles.principle}>{data.principle}</Text>
     </Screen>
@@ -209,6 +233,13 @@ const useStyles = (colors: ThemeColors) => StyleSheet.create({
   headerCopy: { flex: 1 },
   kicker: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.8 },
   title: { color: colors.text, fontSize: 31, lineHeight: 35, fontWeight: '800', letterSpacing: -0.7, marginTop: 2 },
+  // Side-by-side layout for tablet/desktop
+  sceneRow: { flexDirection: 'row', gap: 16, alignItems: 'flex-start' },
+  sceneLeft: { flex: 1.2 },
+  sceneRight: { flex: 1 },
+  // Bottom row
+  bottomRow: { flexDirection: 'row', gap: 16 },
+  bottomLeft: { flex: 1 },
   refreshButton: {
     marginTop: 4,
     paddingHorizontal: 11,

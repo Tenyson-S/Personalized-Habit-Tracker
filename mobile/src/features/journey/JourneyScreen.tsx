@@ -8,6 +8,7 @@ import { api } from '../../services/api';
 import { spacing } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
+import { useResponsive } from '../../hooks/useResponsive';
 import { StoryPanel } from './StoryPanel';
 import { InsightsPanel } from './InsightsPanel';
 
@@ -42,7 +43,8 @@ function celebrationMark(kind: Celebration['kind']) {
 
 export function JourneyScreen() {
   const { colors } = useTheme();
-  const styles = useStyles(colors);
+  const { isMobile, isTablet, isDesktop } = useResponsive();
+  const styles = useStyles(colors, isDesktop, isTablet);
   const [period, setPeriod] = useState<Period>('weekly');
   const journey = useQuery({
     queryKey: ['journey', period],
@@ -50,70 +52,105 @@ export function JourneyScreen() {
     enabled: period !== 'story' && period !== 'insights',
   });
 
+  const periods: Period[] = ['daily', 'weekly', 'monthly', 'insights', 'story'];
+
+  const periodContent = period === 'story' ? <StoryPanel /> : period === 'insights' ? <InsightsPanel /> : journey.isLoading || !journey.data ? <ActivityIndicator /> : (
+    <>
+      <View style={styles.metricsRow}>
+        <Card>
+          <Text style={styles.metricLabel}>Habits</Text>
+          <Text style={styles.metricCompact}>{journey.data.current.habit_completion_rate ?? '—'}{journey.data.current.habit_completion_rate == null ? '' : '%'}</Text>
+          <Text style={styles.mutedSmall}>was {journey.data.previous.habit_completion_rate ?? '—'}{journey.data.previous.habit_completion_rate == null ? '' : '%'}</Text>
+        </Card>
+        <Card>
+          <Text style={styles.metricLabel}>Tasks</Text>
+          <Text style={styles.metricCompact}>{journey.data.current.tasks_completed}</Text>
+          <Text style={styles.mutedSmall}>was {journey.data.previous.tasks_completed}</Text>
+        </Card>
+        <Card>
+          <Text style={styles.metricLabel}>Sleep</Text>
+          <Text style={styles.metricSmall}>{sleepText(journey.data.current.average_sleep_minutes)}</Text>
+          <Text style={styles.mutedSmall}>was {sleepText(journey.data.previous.average_sleep_minutes)}</Text>
+        </Card>
+      </View>
+
+      <Card>
+        <Text style={styles.sectionTitle}>Reflection</Text>
+        <Text style={styles.reflection}>{journey.data.reflection}</Text>
+      </Card>
+
+      <Card>
+        <Text style={styles.celebrationMark}>{celebrationMark(journey.data.celebration.kind)}</Text>
+        <Text style={styles.celebrationTitle}>{journey.data.celebration.title}</Text>
+        <Text style={styles.reflection}>{journey.data.celebration.message}</Text>
+        {journey.data.celebration.suggestions.length > 0 && (
+          <View style={styles.suggestionList}>
+            <Text style={styles.suggestionHeading}>Things you said you enjoy</Text>
+            {journey.data.celebration.suggestions.map((suggestion) => (
+              <View key={suggestion.name} style={styles.suggestionItem}>
+                <Text style={styles.suggestionName}>{suggestion.name}</Text>
+                <Text style={styles.muted}>{suggestion.prompt}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </Card>
+
+      <Text style={styles.footerNote}>A reflection, not an instruction.</Text>
+    </>
+  );
+
+  // Desktop: sidebar period picker + content
+  if (isDesktop) {
+    return (
+      <Screen>
+        <Text style={styles.eyebrow}>YOUR JOURNEY</Text>
+        <Text style={styles.title}>Only you,{`\n`}compared with you.</Text>
+        <View style={styles.desktopLayout}>
+          {/* Left sidebar: period picker */}
+          <View style={[styles.desktopSidebar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={styles.sidebarHeading}>Period</Text>
+            {periods.map((item) => (
+              <Pressable
+                key={item}
+                onPress={() => setPeriod(item)}
+                style={[styles.sidebarItem, period === item && { backgroundColor: colors.primarySoft }]}
+              >
+                <Text style={[styles.sidebarItemText, { color: period === item ? colors.primary : colors.textMuted }, period === item && styles.sidebarItemActive]}>
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {/* Right: content */}
+          <View style={styles.desktopContent}>
+            {periodContent}
+          </View>
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       <Text style={styles.eyebrow}>YOUR JOURNEY</Text>
       <Text style={styles.title}>Only you,{`\n`}compared with you.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {(['daily', 'weekly', 'monthly', 'insights', 'story'] as Period[]).map((item) => (
+        {periods.map((item) => (
           <Pressable key={item} onPress={() => setPeriod(item)} style={[styles.tab, period === item && styles.tabActive]}>
             <Text style={period === item ? styles.tabTextActive : styles.tabText}>{item}</Text>
           </Pressable>
         ))}
       </ScrollView>
 
-      {period === 'story' ? <StoryPanel /> : period === 'insights' ? <InsightsPanel /> : journey.isLoading || !journey.data ? <ActivityIndicator /> : (
-        <>
-          <View style={styles.metricsRow}>
-            <Card>
-              <Text style={styles.metricLabel}>Habits</Text>
-              <Text style={styles.metricCompact}>{journey.data.current.habit_completion_rate ?? '—'}{journey.data.current.habit_completion_rate == null ? '' : '%'}</Text>
-              <Text style={styles.mutedSmall}>was {journey.data.previous.habit_completion_rate ?? '—'}{journey.data.previous.habit_completion_rate == null ? '' : '%'}</Text>
-            </Card>
-            <Card>
-              <Text style={styles.metricLabel}>Tasks</Text>
-              <Text style={styles.metricCompact}>{journey.data.current.tasks_completed}</Text>
-              <Text style={styles.mutedSmall}>was {journey.data.previous.tasks_completed}</Text>
-            </Card>
-            <Card>
-              <Text style={styles.metricLabel}>Sleep</Text>
-              <Text style={styles.metricSmall}>{sleepText(journey.data.current.average_sleep_minutes)}</Text>
-              <Text style={styles.mutedSmall}>was {sleepText(journey.data.previous.average_sleep_minutes)}</Text>
-            </Card>
-          </View>
-
-          <Card>
-            <Text style={styles.sectionTitle}>Reflection</Text>
-            <Text style={styles.reflection}>{journey.data.reflection}</Text>
-          </Card>
-
-          <Card>
-            <Text style={styles.celebrationMark}>{celebrationMark(journey.data.celebration.kind)}</Text>
-            <Text style={styles.celebrationTitle}>{journey.data.celebration.title}</Text>
-            <Text style={styles.reflection}>{journey.data.celebration.message}</Text>
-            {journey.data.celebration.suggestions.length > 0 && (
-              <View style={styles.suggestionList}>
-                <Text style={styles.suggestionHeading}>Things you said you enjoy</Text>
-                {journey.data.celebration.suggestions.map((suggestion) => (
-                  <View key={suggestion.name} style={styles.suggestionItem}>
-                    <Text style={styles.suggestionName}>{suggestion.name}</Text>
-                    <Text style={styles.muted}>{suggestion.prompt}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </Card>
-
-          <Text style={styles.footerNote}>A reflection, not an instruction.</Text>
-        </>
-      )}
+      {periodContent}
     </Screen>
   );
 }
 
-const useStyles = (colors: ThemeColors) => StyleSheet.create({
+const useStyles = (colors: ThemeColors, isDesktop = false, isTablet = false) => StyleSheet.create({
   eyebrow: { color: colors.primary, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', fontWeight: '600', marginBottom: 2 },
-  title: { color: colors.text, fontSize: 34, lineHeight: 38, letterSpacing: -1, fontWeight: '700', marginBottom: 16 },
+  title: { color: colors.text, fontSize: isDesktop ? 44 : 34, lineHeight: isDesktop ? 50 : 38, letterSpacing: -1, fontWeight: '700', marginBottom: 16 },
   tabs: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.md, paddingBottom: 8 },
   tab: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 99, borderWidth: 1, borderColor: colors.border },
   tabActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },
@@ -121,8 +158,8 @@ const useStyles = (colors: ThemeColors) => StyleSheet.create({
   tabTextActive: { color: colors.text, fontSize: 13, fontWeight: '700', textTransform: 'capitalize' },
   metricsRow: { flexDirection: 'row', gap: spacing.sm },
   metricLabel: { color: colors.textMuted, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', fontWeight: '600' },
-  metricCompact: { color: colors.text, fontSize: 24, fontWeight: '700', marginTop: 4 },
-  metricSmall: { color: colors.text, fontSize: 18, fontWeight: '700', marginTop: 4 },
+  metricCompact: { color: colors.text, fontSize: isDesktop ? 30 : 24, fontWeight: '700', marginTop: 4 },
+  metricSmall: { color: colors.text, fontSize: isDesktop ? 22 : 18, fontWeight: '700', marginTop: 4 },
   mutedSmall: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
   sectionTitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 6 },
   muted: { color: colors.textMuted, lineHeight: 20 },
@@ -134,4 +171,12 @@ const useStyles = (colors: ThemeColors) => StyleSheet.create({
   suggestionItem: { backgroundColor: colors.surfaceMuted, borderRadius: 14, padding: spacing.md, gap: 4 },
   suggestionName: { color: colors.text, fontWeight: '700', fontSize: 15 },
   footerNote: { color: colors.textMuted, textAlign: 'center', fontStyle: 'italic', marginTop: spacing.md, fontSize: 12 },
+  // Desktop sidebar layout
+  desktopLayout: { flexDirection: 'row', gap: 24, alignItems: 'flex-start' },
+  desktopSidebar: { width: 160, borderRadius: 16, borderWidth: 1, padding: 12, gap: 4 },
+  sidebarHeading: { color: colors.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8, marginLeft: 8 },
+  sidebarItem: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10 },
+  sidebarItemText: { fontSize: 14, fontWeight: '600', textTransform: 'capitalize' },
+  sidebarItemActive: { fontWeight: '800' },
+  desktopContent: { flex: 1, gap: 12 },
 });
