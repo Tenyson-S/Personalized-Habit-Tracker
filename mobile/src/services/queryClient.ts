@@ -14,10 +14,47 @@ export const queryClient = new QueryClient({
   },
 });
 
+const memoryStorage = new Map<string, string>();
+
+const safeWebStorage = {
+  getItem: async (key: string) => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch {
+      // Fallback
+    }
+    return memoryStorage.get(key) ?? null;
+  },
+  setItem: async (key: string, value: string) => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, value);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+    memoryStorage.set(key, value);
+  },
+  removeItem: async (key: string) => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+    memoryStorage.delete(key);
+  },
+};
+
 export const createScopedPersister = (userId: string | null) => {
   return createAsyncStoragePersister({
     storage: Platform.OS === 'web' 
-      ? typeof window !== 'undefined' ? window.localStorage : undefined
+      ? safeWebStorage
       : AsyncStorage,
     key: `REACT_QUERY_OFFLINE_CACHE_${userId || 'GUEST'}`,
   });

@@ -4,8 +4,44 @@ import type { Tokens } from '../types/api';
 const ACCESS_KEY = 'village.access';
 const REFRESH_KEY = 'village.refresh';
 
-// expo-secure-store is not available on web — use localStorage instead
-// We lazy-import SecureStore so the native module is never referenced on web
+const memoryStore = new Map<string, string>();
+
+function safeGetItem(key: string): string | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem(key);
+    }
+  } catch {
+    // Fall back to in-memory store if localStorage throws in restricted WebViews
+  }
+  return memoryStore.get(key) ?? null;
+}
+
+function safeSetItem(key: string, value: string): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(key, value);
+      return;
+    }
+  } catch {
+    // Fall back to in-memory store
+  }
+  memoryStore.set(key, value);
+}
+
+function safeRemoveItem(key: string): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(key);
+      return;
+    }
+  } catch {
+    // Fall back to in-memory store
+  }
+  memoryStore.delete(key);
+}
+
+// expo-secure-store is not available on web — use safe storage instead
 async function getSecureStore() {
   if (Platform.OS === 'web') return null;
   return await import('expo-secure-store');
@@ -13,9 +49,9 @@ async function getSecureStore() {
 
 export async function saveTokens(tokens: Tokens) {
   if (Platform.OS === 'web') {
-    localStorage.setItem(ACCESS_KEY, tokens.access);
+    safeSetItem(ACCESS_KEY, tokens.access);
     if (tokens.refresh) {
-      localStorage.setItem(REFRESH_KEY, tokens.refresh);
+      safeSetItem(REFRESH_KEY, tokens.refresh);
     }
     return;
   }
@@ -29,8 +65,8 @@ export async function saveTokens(tokens: Tokens) {
 
 export async function readTokens(): Promise<Tokens | null> {
   if (Platform.OS === 'web') {
-    const access = localStorage.getItem(ACCESS_KEY);
-    const refresh = localStorage.getItem(REFRESH_KEY);
+    const access = safeGetItem(ACCESS_KEY);
+    const refresh = safeGetItem(REFRESH_KEY);
     return access && refresh ? { access, refresh } : null;
   }
   const SecureStore = await getSecureStore();
@@ -44,8 +80,8 @@ export async function readTokens(): Promise<Tokens | null> {
 
 export async function clearTokens() {
   if (Platform.OS === 'web') {
-    localStorage.removeItem(ACCESS_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+    safeRemoveItem(ACCESS_KEY);
+    safeRemoveItem(REFRESH_KEY);
     return;
   }
   const SecureStore = await getSecureStore();

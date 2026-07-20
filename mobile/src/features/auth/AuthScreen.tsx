@@ -7,6 +7,7 @@ import { radius, spacing } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
 import { useResponsive } from '../../hooks/useResponsive';
+import { showAlert } from '../../utils/alert';
 
 export function AuthScreen() {
   const { colors } = useTheme();
@@ -21,7 +22,7 @@ export function AuthScreen() {
 
   async function submit() {
     if (!email.trim() || password.length < 8) {
-      Alert.alert('Check your details', 'Use a valid email and a password with at least 8 characters.');
+      showAlert('Check your details', 'Use a valid email and a password with at least 8 characters.');
       return;
     }
     try {
@@ -48,7 +49,7 @@ export function AuthScreen() {
           message = `Network error: Cannot connect to ${error.config?.baseURL}. Make sure your phone and computer are on the same Wi-Fi.`;
         }
       }
-      Alert.alert('Could not continue', message);
+      showAlert('Could not continue', message);
     } finally {
       setLoading(false);
     }

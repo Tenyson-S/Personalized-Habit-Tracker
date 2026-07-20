@@ -10,6 +10,7 @@ import { radius, spacing } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
 import { useResponsive } from '../../hooks/useResponsive';
+import { showConfirm } from '../../utils/alert';
 import type { User } from '../../types/api';
 import type { ProfileStackParamList } from './ProfileNavigator';
 import { GuideScreen } from '../guide/GuideScreen';
@@ -35,25 +36,32 @@ export function ProfileScreen() {
   const me = useQuery({ queryKey: ['me'], queryFn: async () => (await api.get<User>('/me/')).data });
   const [showGuide, setShowGuide] = useState(false);
 
-  async function logout() {
-    try {
-      const refresh = useAuthStore.getState().tokens?.refresh;
-      if (refresh) await api.post('/auth/logout/', { refresh });
-    } catch {
-      // Local sign-out proceeds
-    }
-    await signOut();
-    queryClient.clear();
+  async function handleLogout() {
+    showConfirm(
+      'Sign out?',
+      'You can return whenever you like.',
+      async () => {
+        try {
+          const refresh = useAuthStore.getState().tokens?.refresh;
+          if (refresh) await api.post('/auth/logout/', { refresh }).catch(() => {});
+        } catch {
+          // Local sign-out proceeds
+        }
+        await signOut();
+        queryClient.clear();
+      },
+      'Sign out',
+      'Cancel'
+    );
   }
 
   async function confirmDelete() {
-    Alert.alert(
+    showConfirm(
       'Delete Account?',
       'This will permanently delete your profile, habits, tasks, and history. This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete Account', style: 'destructive', onPress: () => {} },
-      ]
+      () => {},
+      'Delete Account',
+      'Cancel'
     );
   }
 
@@ -99,7 +107,7 @@ export function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionHeader}>ACCOUNT</Text>
         <View style={styles.card}>
-          <SettingsRow title="Sign out" onPress={() => Alert.alert('Sign out?', 'You can return whenever you like.', [{ text: 'Cancel', style: 'cancel' }, { text: 'Sign out', onPress: logout }])} styles={styles} colors={colors} />
+          <SettingsRow title="Sign out" onPress={handleLogout} styles={styles} colors={colors} />
         </View>
       </View>
     </>
