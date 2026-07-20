@@ -41,7 +41,7 @@ export function BrandSplash({ onFinished }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#F5F2EA',
     alignItems: 'center',
     justifyContent: 'center',

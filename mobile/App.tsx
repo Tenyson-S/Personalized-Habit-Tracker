@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0D0F0E',
     alignItems: 'center',
-    justify: 'center',
+    justifyContent: 'center',
   },
   mobileOuter: {
     flex: 1,

@@ -12,7 +12,6 @@ export type User = {
     onboarding_completed: boolean;
     has_completed_guide: boolean;
   };
-  };
 };
 
 export type InterestType = 'IMPROVE' | 'ENJOY' | 'CARE_ABOUT';
