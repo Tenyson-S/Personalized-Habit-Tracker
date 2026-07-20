@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View, ScrollView, Platform, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
@@ -12,6 +13,7 @@ import { showAlert } from '../../utils/alert';
 export function AuthScreen() {
   const { colors } = useTheme();
   const { isMobile, isTablet, isDesktop } = useResponsive();
+  const insets = useSafeAreaInsets();
   const styles = useStyles(colors, isDesktop);
   const setTokens = useAuthStore((state) => state.setTokens);
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -145,12 +147,16 @@ export function AuthScreen() {
     );
   }
 
+  // Top notch spacing calculation for mobile
+  const androidStatusHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0;
+  const topNotchPadding = Math.max(insets.top, androidStatusHeight, isMobile ? 32 : 24);
+
   // ─── Mobile / Tablet: centered card ───────────────────────────────────────
   return (
     <ScrollView
       contentContainerStyle={[
         styles.scrollRoot,
-        { backgroundColor: colors.background },
+        { backgroundColor: colors.background, paddingTop: topNotchPadding },
         isTablet && styles.tabletScrollRoot,
       ]}
     >

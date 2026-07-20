@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from 'react';
-import { ScrollView, StyleSheet, ViewStyle } from 'react-native';
+import { ScrollView, StyleSheet, ViewStyle, Platform, StatusBar } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { spacing } from '../theme/tokens';
 import type { ThemeColors } from '../theme/tokens';
@@ -9,7 +9,15 @@ import { useResponsive } from '../hooks/useResponsive';
 export function Screen({ children, contentStyle }: PropsWithChildren<{ contentStyle?: ViewStyle }>) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const { rs, contentMaxWidth, horizontalPadding } = useResponsive();
+  const { isMobile, rs, contentMaxWidth, horizontalPadding } = useResponsive();
+
+  // Calculate notch / camera / status bar top spacing
+  const androidStatusHeight = Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0;
+  const topPadding = Math.max(
+    insets.top,
+    androidStatusHeight,
+    isMobile ? 24 : 16
+  );
 
   const paddingBottom = rs(
     80 + Math.max(insets.bottom, 12),  // mobile: clear bottom tab bar
@@ -23,6 +31,7 @@ export function Screen({ children, contentStyle }: PropsWithChildren<{ contentSt
         contentContainerStyle={[
           styles.content,
           {
+            paddingTop: topPadding,
             paddingBottom,
             paddingHorizontal: horizontalPadding,
             maxWidth: contentMaxWidth,
@@ -42,6 +51,5 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     width: '100%',
     alignSelf: 'center',
-    paddingTop: spacing.md,
   },
 });
