@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type StartReminderArgs = {
   title: string;
@@ -86,6 +87,34 @@ export async function scheduleStartReminder({ title, startsAt, minutesBefore = 0
 export async function cancelReminder(identifier?: string | null) {
   if (!identifier || Platform.OS === 'web') return;
   await Notifications.cancelScheduledNotificationAsync(identifier);
+}
+
+export async function scheduleRoadmapReminders({ chapterId, startDate, endDate }: { chapterId: string; startDate: string; endDate: string }) {
+  if (!(await ensureNotificationPermission())) return [];
+
+  const storageKey = `roadmap-reminders:${chapterId}:${startDate}:${endDate}:v1`;
+  if (await AsyncStorage.getItem(storageKey)) return [];
+
+  const identifiers: string[] = [];
+  const cursor = new Date(`${startDate}T00:00:00`);
+  const last = new Date(`${endDate}T00:00:00`);
+  while (cursor <= last) {
+    for (const [hour, body, kind] of [
+      [11, "Today's 90 Days Goals are ready. Start your five focused tasks.", 'start'],
+      [18, "Due reminder: finish today's 90 Days Goals and mark them complete.", 'due'],
+    ] as const) {
+      const date = new Date(cursor);
+      date.setHours(hour, 0, 0, 0);
+      if (date.getTime() <= Date.now()) continue;
+      identifiers.push(await Notifications.scheduleNotificationAsync({
+        content: { title: '90 Days Goals', body, sound: true, data: { chapterId, kind } },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date, channelId: 'reminders' } as any,
+      }));
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  await AsyncStorage.setItem(storageKey, JSON.stringify(identifiers));
+  return identifiers;
 }
 
 export async function scheduleWeeklyActivityReminders({

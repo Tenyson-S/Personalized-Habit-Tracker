@@ -12,6 +12,9 @@ class TaskListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         qs = Task.objects.filter(user=self.request.user)
+        due_date = self.request.query_params.get("due_date")
+        if due_date:
+            qs = qs.filter(due_date=due_date)
         completed = self.request.query_params.get("completed")
         if completed in {"true", "false"}:
             qs = qs.filter(completed=(completed == "true"))

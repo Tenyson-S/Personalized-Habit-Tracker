@@ -76,9 +76,13 @@ def today_payload(user):
 
     start, end = day_bounds(user, today)
     tasks = Task.objects.filter(user=user).filter(
-        Q(completed_at__gte=start, completed_at__lt=end)
-        | Q(completed=False, due_date__lte=today)
-        | Q(completed=False, due_date__isnull=True)
+        (
+            Q(completed_at__gte=start, completed_at__lt=end)
+            | Q(completed=False, due_date__lte=today)
+            | Q(completed=False, due_date__isnull=True)
+        )
+        & ~Q(title__startswith="[90G|")
+        | Q(title__startswith="[90G|", due_date=today)
     )[:30]
 
     latest_sleep = SleepSession.objects.filter(user=user, wake_at__isnull=False, wake_at__lte=end).first()

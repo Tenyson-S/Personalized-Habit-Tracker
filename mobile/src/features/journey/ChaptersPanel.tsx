@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../components/Card';
@@ -7,6 +7,16 @@ import { radius, spacing } from '../../theme/tokens';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Chapter, LifeArea, Memory, MemoryType } from '../../types/api';
+import { scheduleRoadmapReminders } from '../../services/reminders';
+
+const ROADMAP_CATEGORIES = ['Backend', 'AI', 'Placement', 'Project', 'Revision'] as const;
+type RoadmapCategory = typeof ROADMAP_CATEGORIES[number];
+type RoadmapTask = { id: string; title: string; description: string; due_date: string; completed: boolean };
+
+function roadmapTask(task: RoadmapTask) {
+  const match = task.title.match(/^\[90G\|([^\]]+)\]\s*(.*)$/);
+  return match ? { category: match[1] as RoadmapCategory, title: match[2] } : null;
+}
 
 const LIFE_AREAS: { key: LifeArea; label: string }[] = [
   { key: 'LEARNING', label: 'Learning' },
@@ -151,6 +161,33 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
 }
 
 function CurrentChapterCard({ chapter, onAddMemory, onClosed, styles, colors }: { chapter: Chapter; onAddMemory: () => void; onClosed: () => Promise<void>; styles: any; colors: ThemeColors }) {
+  const queryClient = useQueryClient();
+  const [category, setCategory] = useState<RoadmapCategory>('Backend');
+  const isRoadmap = chapter.title === '90 Days Goals';
+  const today = todayIso();
+  const dailyTasks = useQuery({
+    queryKey: ['chapter-daily-tasks', today],
+    queryFn: async () => (await api.get<RoadmapTask[]>(`/tasks/?due_date=${today}`)).data,
+    enabled: isRoadmap,
+  });
+  const completeTask = useMutation({
+    mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => api.post(`/tasks/${id}/complete/`, { completed }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['chapter-daily-tasks', today] }),
+        queryClient.invalidateQueries({ queryKey: ['today'] }),
+      ]);
+    },
+  });
+  const categorized = (dailyTasks.data ?? []).map((task) => ({ task, parsed: roadmapTask(task) })).filter((item) => item.parsed);
+  const selected = categorized.filter((item) => item.parsed?.category === category);
+
+  useEffect(() => {
+    if (isRoadmap && chapter.end_date) {
+      scheduleRoadmapReminders({ chapterId: chapter.id, startDate: chapter.start_date, endDate: chapter.end_date }).catch(() => undefined);
+    }
+  }, [chapter.end_date, chapter.id, chapter.start_date, isRoadmap]);
+
   const closeChapter = useMutation({
     mutationFn: async () => (await api.post<Chapter>(`/chapters/${chapter.id}/close/`, {})).data,
     onSuccess: onClosed,
@@ -179,6 +216,31 @@ function CurrentChapterCard({ chapter, onAddMemory, onClosed, styles, colors }: 
       <View style={styles.focusRow}>
         {chapter.focuses.map((focus) => <View key={focus.id} style={styles.focusChip}><Text style={styles.focusChipText}>{focus.life_area_label}</Text></View>)}
       </View>
+      {isRoadmap ? (
+        <View style={styles.roadmapSection}>
+          <View>
+            <Text style={styles.roadmapEyebrow}>TODAY'S PLAN</Text>
+            <Text style={styles.roadmapHint}>Choose an area and finish its focused task.</Text>
+          </View>
+          <View style={styles.roadmapTabs}>
+            {ROADMAP_CATEGORIES.map((item) => (
+              <Pressable key={item} onPress={() => setCategory(item)} style={[styles.roadmapTab, category === item && styles.roadmapTabActive]}>
+                <Text style={[styles.roadmapTabText, category === item && styles.roadmapTabTextActive]}>{item}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {dailyTasks.isLoading ? <ActivityIndicator /> : selected.length ? selected.map(({ task, parsed }) => (
+            <Pressable key={task.id} style={[styles.roadmapTask, task.completed && styles.roadmapTaskDone]} onPress={() => completeTask.mutate({ id: task.id, completed: !task.completed })}>
+              <View style={[styles.taskCheck, task.completed && styles.taskCheckDone]}><Text style={styles.taskCheckText}>{task.completed ? '✓' : ''}</Text></View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.roadmapTaskTitle, task.completed && styles.roadmapTaskTitleDone]}>{parsed?.title}</Text>
+                <Text style={styles.roadmapTaskMeta}>{task.completed ? 'Completed' : 'Tap when complete · Due 6:00 PM'}</Text>
+              </View>
+            </Pressable>
+          )) : <Text style={styles.roadmapEmpty}>No {category.toLowerCase()} task is scheduled for today.</Text>}
+          <Text style={styles.reminderNote}>Reminders: 11:00 AM · Due: 6:00 PM</Text>
+        </View>
+      ) : null}
       <View style={styles.statsRow}>
         <Stat value={chapter.retrospective.active_days} label="active days" styles={styles} />
         <Stat value={chapter.retrospective.tasks_completed} label="tasks" styles={styles} />
@@ -325,6 +387,24 @@ const useStyles = (colors: ThemeColors) => StyleSheet.create({
   focusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   focusChip: { backgroundColor: colors.background, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, borderWidth: 1, borderColor: colors.border },
   focusChipText: { color: colors.text, fontSize: 11, fontWeight: '700' },
+  roadmapSection: { gap: 12, backgroundColor: colors.background, borderRadius: 18, padding: 14, borderWidth: 1, borderColor: colors.border },
+  roadmapEyebrow: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1.3 },
+  roadmapHint: { color: colors.textMuted, fontSize: 12, marginTop: 3 },
+  roadmapTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  roadmapTab: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  roadmapTabActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  roadmapTabText: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
+  roadmapTabTextActive: { color: '#FFFFFF' },
+  roadmapTask: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 13, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  roadmapTaskDone: { opacity: 0.65 },
+  taskCheck: { width: 24, height: 24, borderRadius: 8, borderWidth: 2, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  taskCheckDone: { backgroundColor: colors.primary },
+  taskCheckText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  roadmapTaskTitle: { color: colors.text, fontSize: 14, lineHeight: 19, fontWeight: '700' },
+  roadmapTaskTitleDone: { textDecorationLine: 'line-through' },
+  roadmapTaskMeta: { color: colors.textMuted, fontSize: 10, marginTop: 4 },
+  roadmapEmpty: { color: colors.textMuted, fontSize: 13, paddingVertical: 8 },
+  reminderNote: { color: colors.primary, fontSize: 10, fontWeight: '700' },
   statsRow: { flexDirection: 'row', gap: 8 },
   stat: { flex: 1, backgroundColor: colors.background, borderRadius: 16, padding: 12, minHeight: 74 },
   statValue: { color: colors.text, fontSize: 22, fontWeight: '800' },
