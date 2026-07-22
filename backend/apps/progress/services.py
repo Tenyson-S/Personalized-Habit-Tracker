@@ -6,6 +6,7 @@ from django.utils import timezone
 from apps.habits.models import Habit, HabitCompletion
 from apps.habits.services import is_habit_scheduled
 from apps.sleep.models import SleepSession
+from apps.sleep.services import average_daily_sleep, session_type
 from apps.tasks.models import Task
 from apps.dailies.models import Daily, DailyCompletion
 
@@ -138,6 +139,7 @@ def today_payload(user):
                 "duration_minutes": latest_sleep.duration_minutes,
                 "sleep_started_at": latest_sleep.sleep_started_at,
                 "wake_at": latest_sleep.wake_at,
+                "session_type": session_type(latest_sleep.duration_minutes),
             }
             if latest_sleep else None
         ),
@@ -173,7 +175,7 @@ def period_metrics(user, start, end):
     start_dt, _ = day_bounds(user, start)
     _, end_dt = day_bounds(user, end)
     task_count = Task.objects.filter(user=user, completed_at__gte=start_dt, completed_at__lt=end_dt).count()
-    sleeps = list(SleepSession.objects.filter(user=user, wake_at__gte=start_dt, wake_at__lt=end_dt, duration_minutes__isnull=False).values_list("duration_minutes", flat=True))
+    sleeps = list(SleepSession.objects.filter(user=user, wake_at__gte=start_dt, wake_at__lt=end_dt, duration_minutes__isnull=False))
 
     return {
         "start": start,
@@ -182,7 +184,7 @@ def period_metrics(user, start, end):
         "completed_habits": completed,
         "habit_completion_rate": round(completed / scheduled * 100, 1) if scheduled else None,
         "tasks_completed": task_count,
-        "average_sleep_minutes": round(mean(sleeps)) if sleeps else None,
+        "average_sleep_minutes": average_daily_sleep(user, sleeps),
     }
 
 

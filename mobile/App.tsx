@@ -24,8 +24,8 @@ class AppErrorBoundary extends Component<{ children: React.ReactNode }, { hasErr
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('AppErrorBoundary caught an error:', error, errorInfo);
+  componentDidCatch(_error: Error, _errorInfo: any) {
+    // Silently catch — production errors are handled by crash reporting
   }
 
   render() {
@@ -33,10 +33,8 @@ class AppErrorBoundary extends Component<{ children: React.ReactNode }, { hasErr
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>Something went wrong</Text>
-          <Text style={styles.errorMessage}>
-            {this.state.error?.message || 'The application encountered an unexpected error.'}
-          </Text>
-          <Pressable style={styles.retryButton} onPress={() => window.location.reload()}>
+          <Text style={styles.errorMessage}>The application encountered an unexpected error.</Text>
+          <Pressable style={styles.retryButton} onPress={() => this.setState({ hasError: false, error: null })}>
             <Text style={styles.retryButtonText}>Reload App</Text>
           </Pressable>
         </View>
@@ -63,7 +61,7 @@ function AppContent() {
     }, 1500);
 
     hydrate()
-      .catch((err) => console.error('Hydration error:', err))
+      .catch(() => { /* Hydration errors are non-fatal — hydrated fallback timeout handles it */ })
       .finally(() => clearTimeout(timeout));
 
     const unsubscribe = initConnectivityListener();

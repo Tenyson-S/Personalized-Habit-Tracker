@@ -24,3 +24,17 @@ dist/
 Thumbs.db
 
 .vercel
+
+# Local build outputs and crash dumps
+*.apk
+*.aab
+*.hprof
+*.log
+mobile/android/.gradle/
+mobile/android/app/.cxx/
+mobile/hb-app/
+
+# Local release helpers and audit notes
+mobile/build_apk.bat
+mobile/clean_cmake.ps1
+PRODUCTION_AUDIT.md

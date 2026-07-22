@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.habits.models import HabitCompletion
 from apps.sleep.models import SleepSession
+from apps.sleep.services import average_daily_sleep
 from apps.tasks.models import Task
 from apps.village.models import RewardEvent, VillageBuilding
 
@@ -93,10 +94,7 @@ def chapter_retrospective(chapter):
 
     memory_count = chapter.memories.count() if hasattr(chapter, "memories") else 0
     duration_days = max((end_date - start_date).days + 1, 1)
-    sleep_aggregate = sleep_sessions.aggregate(total=Sum("duration_minutes"), count=Count("id"))
-    average_sleep = None
-    if sleep_aggregate["count"]:
-        average_sleep = round((sleep_aggregate["total"] or 0) / sleep_aggregate["count"])
+    average_sleep = average_daily_sleep(chapter.user, sleep_sessions)
 
     return {
         "duration_days": duration_days,

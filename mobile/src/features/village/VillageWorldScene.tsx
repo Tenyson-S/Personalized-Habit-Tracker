@@ -539,7 +539,7 @@ export function VillageWorldScene({
 
   return (
     <View style={[styles.scene, { height: sceneHeight }]}>
-      <Svg width="100%" height="100%" viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} preserveAspectRatio="xMidYMid slice">
+      <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} preserveAspectRatio="xMidYMid slice">
         <Terrain world={world} palette={palette} />
         {world.buildings.map((building) => (
           <BuildingArt key={building.key} building={building} palette={palette} selected={building.key === selectedKey} />
@@ -569,6 +569,7 @@ export function VillageWorldScene({
           <Pressable
             key={building.key}
             onPress={() => onSelect(building)}
+            hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={`${building.name}, ${building.state_label}`}
             accessibilityHint="Shows how this part of your life is reflected in the village"
@@ -600,7 +601,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(47,58,49,0.12)',
   },
-  hitTarget: { position: 'absolute', borderRadius: 32 },
+  hitTarget: { position: 'absolute', borderRadius: 32, zIndex: 10, elevation: 10 },
   stagePill: {
     position: 'absolute',
     top: 14,

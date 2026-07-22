@@ -87,12 +87,10 @@ export async function processSyncQueue(userId: string) {
           await mutationQueue.removeMutation(mutation.id);
         } catch (error: any) {
           if (error.response && error.response.status >= 400 && error.response.status < 500) {
-            // Client error — drop to avoid infinite retry loop
-            console.error('Dropping invalid mutation', mutation.id, error.response.data);
+            // Client error — drop to avoid infinite retry loop (bad request won't succeed on retry)
             await mutationQueue.removeMutation(mutation.id);
           } else {
-            // Network or server error — stop and retry later
-            console.error('Sync failed, will retry later', error);
+            // Network or server error — stop and retry when connection restores
             throw error;
           }
         }
@@ -101,8 +99,8 @@ export async function processSyncQueue(userId: string) {
 
     // Invalidate everything to refresh with real server IDs
     await queryClient.invalidateQueries();
-  } catch (err) {
-    console.error('Error in sync engine', err);
+  } catch {
+    // Sync errors are non-fatal — queue will be retried on next connectivity event
   } finally {
     setSyncing(false);
 

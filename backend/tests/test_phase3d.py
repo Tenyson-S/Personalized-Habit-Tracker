@@ -1,4 +1,5 @@
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from django.urls import reverse
 from django.utils import timezone
@@ -26,8 +27,8 @@ class PhaseThreeDAnalyticsTests(APITestCase):
             timezone="Asia/Kolkata",
         )
         self.client.force_authenticate(self.user)
-        self.today = timezone.localdate()
         self.now = timezone.now()
+        self.today = timezone.localtime(self.now, ZoneInfo(self.user.timezone)).date()
 
     def habit(self, name="Read", life_area="LEARNING", schedule_mode=Habit.ScheduleMode.SELECTED_DAYS, target_per_week=None):
         item = Habit.objects.create(
@@ -100,6 +101,47 @@ class PhaseThreeDAnalyticsTests(APITestCase):
         areas = {item["key"]: item for item in response.data["life_areas"]}
         self.assertEqual(areas["REST"]["sleep_sessions"], 1)
         self.assertEqual(response.data["current"]["average_sleep_minutes"], 420)
+
+    def test_sleep_average_combines_nap_and_main_sleep_by_local_day(self):
+        SleepSession.objects.create(
+            user=self.user,
+            sleep_started_at=self.now - timedelta(hours=10),
+            wake_at=self.now - timedelta(hours=9),
+            duration_minutes=60,
+        )
+        SleepSession.objects.create(
+            user=self.user,
+            sleep_started_at=self.now - timedelta(hours=8),
+            wake_at=self.now,
+            duration_minutes=480,
+        )
+
+        response = self.client.get(reverse("analytics-overview"), {"period": "7d"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data["current"]["average_sleep_minutes"], 540)
+
+    def test_sleep_summary_reports_naps_and_daily_average(self):
+        SleepSession.objects.create(
+            user=self.user,
+            sleep_started_at=self.now - timedelta(hours=9),
+            wake_at=self.now - timedelta(hours=8),
+            duration_minutes=60,
+        )
+        SleepSession.objects.create(
+            user=self.user,
+            sleep_started_at=self.now - timedelta(hours=8),
+            wake_at=self.now,
+            duration_minutes=480,
+        )
+
+        response = self.client.get(reverse("sleep-summary"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(response.data["week"]["average_minutes"], 540)
+        self.assertEqual(response.data["week"]["day_count"], 1)
+        self.assertEqual(response.data["week"]["nap_count"], 1)
+        self.assertEqual(response.data["week"]["main_sleep_count"], 1)
 
     def test_task_deadline_behavior_distinguishes_early_on_time_and_late(self):
         Task.objects.create(

@@ -41,8 +41,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         await mutationQueue.initQueue();
         processSyncQueue(userId);
       }
-    } catch (error) {
-      console.error('Failed to read auth tokens', error);
+    } catch {
+      // Silently fail — token read error is non-fatal; user will be treated as unauthenticated
       set({ tokens: null, userId: null, hydrated: true });
     }
   },

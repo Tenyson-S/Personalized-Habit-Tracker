@@ -105,7 +105,7 @@ export type TodayPayload = {
   habits: HabitToday[];
   dailies: { id: string; title: string; life_area: string; preferred_time: string | null; completion: { completed: boolean } | null }[];
   tasks: TaskToday[];
-  sleep: null | { duration_minutes: number; sleep_started_at: string; wake_at: string };
+  sleep: null | { duration_minutes: number; sleep_started_at: string; wake_at: string; session_type: 'NAP' | 'MAIN_SLEEP' };
   comparison: {
     habit_delta: number;
     task_delta: number;

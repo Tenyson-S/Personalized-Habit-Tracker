@@ -80,6 +80,7 @@ class AuthenticatedPhaseOneTests(APITestCase):
         response = self.client.post(reverse("sleep-wake"), {"wake_at": wake.isoformat()}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(response.data["duration_minutes"], 449)
+        self.assertEqual(response.data["session_type"], "MAIN_SLEEP")
 
     def test_today_payload_contains_personal_comparison_and_village(self):
         habit = self.create_daily_habit()

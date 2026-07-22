@@ -19,6 +19,11 @@ function formatMinutes(value?: number | null) {
   return `${hours}h ${minutes}m`;
 }
 
+function sleepRecordLabel(sleep?: TodayPayload['sleep']) {
+  if (!sleep) return 'No sleep record';
+  return `${sleep.session_type === 'NAP' ? 'Nap' : 'Main sleep'} · ${formatMinutes(sleep.duration_minutes)}`;
+}
+
 function greeting() {
   const hour = new Date().getHours();
   if (hour < 12) return 'morning';
@@ -255,7 +260,7 @@ export function TodayScreen() {
               <View style={styles.sleepCard}>
                 <View style={{ marginBottom: 12 }}>
                   <Text style={styles.smallKicker}>REST TRACKER</Text>
-                  <Text style={styles.sleepValue}>{sleepCurrent.data ? 'You are resting…' : formatMinutes(data.sleep?.duration_minutes)}</Text>
+                  <Text style={styles.sleepValue}>{sleepCurrent.data ? 'You are resting…' : sleepRecordLabel(data.sleep)}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <Pressable onPress={() => !sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !!sleepCurrent.data} style={[styles.sleepButton, !!sleepCurrent.data && styles.sleepButtonDisabled]}>
@@ -331,7 +336,7 @@ export function TodayScreen() {
             <View style={styles.sleepCard}>
               <View style={{ marginBottom: 12 }}>
                 <Text style={styles.smallKicker}>REST TRACKER</Text>
-                <Text style={styles.sleepValue}>{sleepCurrent.data ? 'You are resting…' : formatMinutes(data.sleep?.duration_minutes)}</Text>
+                <Text style={styles.sleepValue}>{sleepCurrent.data ? 'You are resting…' : sleepRecordLabel(data.sleep)}</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 10 }}>
                 <Pressable onPress={() => !sleepCurrent.data && sleep.mutate()} disabled={sleep.isPending || !!sleepCurrent.data} style={[styles.sleepButton, !!sleepCurrent.data && styles.sleepButtonDisabled]}>

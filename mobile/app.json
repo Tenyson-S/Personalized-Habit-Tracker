@@ -2,28 +2,49 @@
   "expo": {
     "name": "Stealth Track",
     "slug": "stealth-tracker",
-    "version": "0.5.0",
+    "version": "1.0.2",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "android": {
-      "package": "com.projectvillage.seed",
+      "package": "com.tenyson.stealthtrack",
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F5F2EA"
-      }
+        "backgroundColor": "#F5F2EA",
+        "monochromeImage": "./assets/monochrome-icon.png"
+      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "plugins": [
       "expo-secure-store",
-      "expo-notifications",
-      "expo-asset"
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0D0F0E"
+        }
+      ],
+      "expo-asset",
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-sqlite",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F5F2EA"
+        }
+      ]
     ],
     "backgroundColor": "#F5F2EA",
     "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F5F2EA"
-    },
     "extra": {
       "eas": {
         "projectId": "cc3de067-6037-4eaa-8c16-9e123a04e395"

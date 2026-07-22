@@ -1,22 +1,13 @@
+# Managed Expo Cloud Prebuild
+android/
+ios/
+
 # Dependencies & caches
 node_modules/
 .expo/
 dist/
 web-build/
 .git/
-
-# Native build artifacts
-android/.gradle/
-android/build/
-android/app/build/
-android/.kotlin/
-android/.idea/
-android/local.properties
-android/app/build.gradle.bak
-
-# iOS build artifacts
-ios/Pods/
-ios/build/
 
 # Environment files
 .env

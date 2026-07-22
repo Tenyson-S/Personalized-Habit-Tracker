@@ -1,4 +1,4 @@
-package com.projectvillage.seed
+package com.tenyson.stealthtrack
 
 import android.os.Build
 import android.os.Bundle

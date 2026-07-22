@@ -7,9 +7,14 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 300_000, // 5 minutes
-      retry: 1,
-      // Default gcTime to 7 days for persistence
+      retry: 2,
+      // Exponential backoff: 1s, 2s (handles Railway cold starts gracefully)
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10_000),
+      // Default gcTime to 7 days for offline persistence
       gcTime: 7 * 24 * 60 * 60 * 1000,
+    },
+    mutations: {
+      retry: 0, // Mutations managed by offline queue — don't double-retry
     },
   },
 });
@@ -23,7 +28,7 @@ const safeWebStorage = {
         return window.localStorage.getItem(key);
       }
     } catch {
-      // Fallback
+      // Fallback to memory
     }
     return memoryStorage.get(key) ?? null;
   },
@@ -34,7 +39,7 @@ const safeWebStorage = {
         return;
       }
     } catch {
-      // Fallback
+      // Fallback to memory
     }
     memoryStorage.set(key, value);
   },
@@ -45,7 +50,7 @@ const safeWebStorage = {
         return;
       }
     } catch {
-      // Fallback
+      // Fallback to memory
     }
     memoryStorage.delete(key);
   },
@@ -53,7 +58,7 @@ const safeWebStorage = {
 
 export const createScopedPersister = (userId: string | null) => {
   return createAsyncStoragePersister({
-    storage: Platform.OS === 'web' 
+    storage: Platform.OS === 'web'
       ? safeWebStorage
       : AsyncStorage,
     key: `REACT_QUERY_OFFLINE_CACHE_${userId || 'GUEST'}`,

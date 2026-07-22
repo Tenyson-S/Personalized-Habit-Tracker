@@ -16,6 +16,7 @@ from apps.habits.services import journey_metrics
 from apps.memories.models import Memory
 from apps.progress.services import day_bounds, local_date_for, user_tz
 from apps.sleep.models import SleepSession
+from apps.sleep.services import average_daily_sleep
 from apps.tasks.models import Task
 
 
@@ -210,7 +211,7 @@ def life_area_breakdown(user, value: DateRange):
 
 def _summary_metrics(user, value: DateRange):
     rows, habits, dailies, tasks, sleeps = _activity_rows(user, value)
-    average_sleep = round(mean([item.duration_minutes for item in sleeps])) if sleeps else None
+    average_sleep = average_daily_sleep(user, sleeps)
     memory_count = Memory.objects.filter(user=user, happened_on__range=(value.start, value.end)).count()
     active_days = len({row["date"] for row in rows})
     return {

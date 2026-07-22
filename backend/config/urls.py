@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from django.http import JsonResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from .views import app_version
 
 def health_check(request):
     try:
@@ -13,6 +14,7 @@ def health_check(request):
 
 urlpatterns = [
     path("health/", health_check, name="health_check"),
+    path("api/app/version/", app_version, name="app-version"),
     path("admin/", admin.site.urls),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),

@@ -1,8 +1,9 @@
 import { Platform } from 'react-native';
 import type { Tokens } from '../types/api';
 
-const ACCESS_KEY = 'village.access';
-const REFRESH_KEY = 'village.refresh';
+// Namespaced to com.tenyson.stealthtrack to avoid collisions with old builds
+const ACCESS_KEY = 'stealthtrack.access';
+const REFRESH_KEY = 'stealthtrack.refresh';
 
 const memoryStore = new Map<string, string>();
 

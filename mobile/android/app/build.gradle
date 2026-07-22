@@ -2,7 +2,12 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+import org.gradle.api.GradleException
+
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
+
+// Redirect build output to short path to bypass Windows 260-char MAX_PATH limit in CMake/Ninja
+buildDir = findProperty("st.buildDir") ?: "C:/tmp/hb-app"
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -87,15 +92,28 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.projectvillage.seed'
+    externalNativeBuild {
+        cmake {
+            buildStagingDirectory = file(findProperty("st.cxxDir") ?: "C:/tmp/hb-cxx")
+        }
+    }
+
+    namespace 'com.tenyson.stealthtrack'
     defaultConfig {
-        applicationId 'com.projectvillage.seed'
+        applicationId 'com.tenyson.stealthtrack'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "0.5.0"
+        versionCode 4
+        versionName "1.0.2"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
+
+        externalNativeBuild {
+            cmake {
+                // Expand max object path length to handle deep node_modules paths on Windows
+                arguments "-DCMAKE_OBJECT_PATH_MAX=1000"
+            }
+        }
     }
     signingConfigs {
         debug {
@@ -104,20 +122,29 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            def releaseStoreFile = System.getenv("ST_RELEASE_STORE_FILE") ?: findProperty("ST_RELEASE_STORE_FILE")
+            if (releaseStoreFile) {
+                storeFile file(releaseStoreFile)
+                storePassword System.getenv("ST_RELEASE_STORE_PASSWORD") ?: findProperty("ST_RELEASE_STORE_PASSWORD")
+                keyAlias System.getenv("ST_RELEASE_KEY_ALIAS") ?: findProperty("ST_RELEASE_KEY_ALIAS")
+                keyPassword System.getenv("ST_RELEASE_KEY_PASSWORD") ?: findProperty("ST_RELEASE_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
-            debuggable true
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (!signingConfigs.release.storeFile) {
+                throw new GradleException("Production signing is not configured. Set ST_RELEASE_STORE_FILE, ST_RELEASE_STORE_PASSWORD, ST_RELEASE_KEY_ALIAS, and ST_RELEASE_KEY_PASSWORD.")
+            }
+            signingConfig signingConfigs.release
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
             crunchPngs enablePngCrunchInRelease.toBoolean()
         }
@@ -138,9 +165,9 @@ android {
 // android.packagingOptions.pickFirsts=/LICENSE,**/picasa.ini
 ["pickFirsts", "excludes", "merges", "doNotStrip"].each { prop ->
     // Split option: 'foo,bar' -> ['foo', 'bar']
-    def options = (findProperty("android.packagingOptions.$prop") ?: "").split(",")
+    def options = (findProperty("android.packagingOptions.$prop") ?: "").split(",");
     // Trim all elements in place.
-    for (i in 0..<options.size()) options[i] = options[i].trim()
+    for (i in 0..<options.size()) options[i] = options[i].trim();
     // `[] - ""` is essentially `[""].filter(Boolean)` removing all empty strings.
     options -= ""
 
@@ -157,9 +184,9 @@ dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 
-    def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true"
-    def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true"
-    def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true"
+    def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
+    def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
+    def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true";
 
     if (isGifEnabled) {
         // For animated gif support

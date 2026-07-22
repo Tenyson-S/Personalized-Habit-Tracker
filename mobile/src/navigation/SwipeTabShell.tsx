@@ -10,6 +10,7 @@ import { useComposerStore } from '../store/composerStore';
 import { useTheme } from '../theme/ThemeContext';
 import { TabIcon } from './TabIcon';
 import { useResponsive } from '../hooks/useResponsive';
+import { UpdateBanner } from '../components/UpdateBanner';
 
 const TABS = [
   { name: 'Today', component: TodayScreen, path: '/today' },
@@ -160,16 +161,12 @@ export function SwipeTabShell() {
   }
 
   // ─── Mobile / Tablet: bottom tab bar layout ───────────────────────────────
+  const ActiveComponent = TABS[activeIndex].component;
   return (
     <View style={styles.root}>
-      <View style={styles.pager} {...panResponder.panHandlers}>
-        <Animated.View style={[styles.row, { width: layoutWidth * TABS.length, transform: [{ translateX }] }]}>
-          {TABS.map(({ name, component: Component }) => (
-            <View key={name} style={{ width: layoutWidth, flex: 1 }}>
-              <Component />
-            </View>
-          ))}
-        </Animated.View>
+      <UpdateBanner />
+      <View style={styles.pager}>
+        <ActiveComponent />
       </View>
 
       <View style={[styles.nav, { paddingBottom: Math.max(insets.bottom, isTablet ? 8 : 12), borderTopColor: colors.border, backgroundColor: colors.surface }]}>

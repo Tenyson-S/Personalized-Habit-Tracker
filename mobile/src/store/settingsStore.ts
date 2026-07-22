@@ -18,8 +18,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       const res = await api.get<UserSettings>('/me/settings/');
       set({ settings: res.data });
-    } catch (e) {
-      console.warn('Failed to fetch settings', e);
+    } catch {
+      // Silently fail — settings fetch is non-blocking
     } finally {
       set({ isLoading: false });
     }
@@ -31,8 +31,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       const res = await api.patch<UserSettings>('/me/settings/', updates);
       set({ settings: res.data });
-    } catch (e: any) {
-      console.warn('Failed to update settings', e.response?.data || e);
+    } catch {
+      // Silently revert optimistic update on failure
       if (previous) set({ settings: previous });
     }
   },

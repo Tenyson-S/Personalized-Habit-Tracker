@@ -134,9 +134,9 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Village API",
-    "DESCRIPTION": "Village API for a calm personal growth companion with life chapters, memories, celebrations, and world history.",
-    "VERSION": "0.4.0",
+    "TITLE": "Stealth Track API",
+    "DESCRIPTION": "Stealth Track API for habits, dailies, tasks, sleep, chapters, village progress, and analytics.",
+    "VERSION": "1.0.0",
 }
 
 if not DEBUG:
@@ -144,9 +144,6 @@ if not DEBUG:
     if not cors_allowed or cors_allowed == "*":
         raise ValueError("CORS_ALLOWED_ORIGINS must be set securely in production")
     CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_allowed.split(",") if o.strip()]
-    # Always allow the local Expo dev server to hit production for easier development
-    if "http://localhost:8081" not in CORS_ALLOWED_ORIGINS:
-        CORS_ALLOWED_ORIGINS.append("http://localhost:8081")
     CORS_ALLOW_ALL_ORIGINS = False
 else:
     # In local dev, allow all origins for maximum convenience
@@ -169,9 +166,18 @@ CORS_ALLOW_HEADERS = [
 CSRF_TRUSTED_ORIGINS = (
     CORS_ALLOWED_ORIGINS
     if not DEBUG else
-    ["http://localhost:8081", "http://127.0.0.1:8000", "https://stealth-tracker-rho.vercel.app"]
+    ["https://stealth-tracker-rho.vercel.app"]
 )
 GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
+
+# Direct APK update metadata. The update remains disabled until a valid HTTPS
+# APK URL is configured, preventing deployment from advertising a missing file.
+APP_UPDATE_VERSION_CODE = int(os.getenv("APP_UPDATE_VERSION_CODE", "4"))
+APP_UPDATE_VERSION_NAME = os.getenv("APP_UPDATE_VERSION_NAME", "1.0.2")
+APP_UPDATE_APK_URL = os.getenv("APP_UPDATE_APK_URL", "").strip()
+APP_UPDATE_SHA256 = os.getenv("APP_UPDATE_SHA256", "").strip().upper()
+APP_UPDATE_REQUIRED = os.getenv("APP_UPDATE_REQUIRED", "false").lower() == "true"
+APP_UPDATE_RELEASE_NOTES = os.getenv("APP_UPDATE_RELEASE_NOTES", "A new version is available.")
 
 # Production Logging
 LOGGING = {
