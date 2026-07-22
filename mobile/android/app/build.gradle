@@ -68,6 +68,17 @@ react {
     autolinkLibrariesWithApp()
 }
 
+// Gradle 8.13 validates that the release bundle waits for generated Expo/React
+// Native entry-point and autolinking files before reading the project root.
+afterEvaluate {
+    tasks.matching { it.name == "createBundleReleaseJsAndAssets" }.configureEach {
+        dependsOn("generateReactNativeEntryPoint")
+        dependsOn("generateAutolinkingPackageList")
+        dependsOn("generateAutolinkingNewArchitectureFiles")
+        dependsOn("buildKotlinToolingMetadata")
+    }
+}
+
 /**
  * Set this to true in release builds to optimize the app using [R8](https://developer.android.com/topic/performance/app-optimization/enable-app-optimization).
  */
@@ -103,8 +114,8 @@ android {
         applicationId 'com.tenyson.stealthtrack'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.0.2"
+        versionCode 5
+        versionName "1.0.3"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
 
