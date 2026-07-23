@@ -5,13 +5,13 @@ import {
   Easing,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { GUIDE_SLIDES } from '../../constants/guideSlides';
 import type { ThemeColors } from '../../theme/tokens';
 import { useTheme } from '../../theme/ThemeContext';
@@ -93,7 +93,7 @@ export function GuideScreen({ onComplete }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       {/* Top bar */}
       <View style={styles.topBar}>
         <Text style={styles.stepLabel}>

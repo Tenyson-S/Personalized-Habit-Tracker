@@ -14,6 +14,7 @@ import { DatePickerField } from '../../components/forms/DatePickerField';
 import { TimePickerField } from '../../components/forms/TimePickerField';
 import { extractLocalDateForApi, extractLocalTimeForApi } from '../../utils/date';
 import { addHours } from 'date-fns';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
 const DAY_LABELS = ['M','T','W','T','F','S','S'];
@@ -30,6 +31,7 @@ export function ActivityComposer(){
  const close = useComposerStore(state => state.close);
  const settings = useSettingsStore(state => state.settings);
  const { colors } = useTheme();
+ const insets = useSafeAreaInsets();
  const styles = useStyles(colors);
  const visible = isOpen;
  const onClose = close;
@@ -151,11 +153,11 @@ export function ActivityComposer(){
    reset(); onSaved(); onClose();
   }catch(e:any){Alert.alert('Could not save',e?.response?.data?JSON.stringify(e.response.data):'Nothing was lost. Please try again.');} finally{setSaving(false);}
  }
-  return <Modal visible={visible} transparent={true} animationType="fade" onRequestClose={onClose}>
-    <View style={styles.overlay}>
+  return <Modal visible={visible} transparent={true} animationType="fade" statusBarTranslucent onRequestClose={onClose}>
+    <View style={[styles.overlay, { paddingTop: Math.max(insets.top + 12, 24), paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
       <View style={styles.card}>
         <ScrollView contentContainerStyle={styles.page}>
-          <View style={styles.row}><View><Text style={styles.eyebrow}>{initialData ? 'EDIT ACTIVITY' : 'ADD TO YOUR LIFE'}</Text><Text style={styles.title}>{initialData ? 'Update details' : 'What are you adding?'}</Text></View><Pressable onPress={onClose}><Text style={styles.close}>Close</Text></Pressable></View>
+          <View style={styles.row}><View><Text style={styles.eyebrow}>{initialData ? 'EDIT ACTIVITY' : 'ADD TO YOUR LIFE'}</Text><Text style={styles.title}>{initialData ? 'Update details' : 'What are you adding?'}</Text></View><Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close activity editor"><Text style={styles.close}>Close</Text></Pressable></View>
   {!initialData && <View style={styles.segments}>{(['habit','daily','task'] as Kind[]).map(k=><Pressable key={k} onPress={()=>setKind(k)} style={[styles.segment,kind===k&&styles.active]}><Text style={kind===k?styles.activeText:styles.muted}>{k[0].toUpperCase()+k.slice(1)}</Text></Pressable>)}</View>}
   {kind==='habit' && !initialData ?<>
     <Text style={styles.label}>Is this new to your life?</Text>
@@ -195,8 +197,8 @@ export function ActivityComposer(){
  </ScrollView></View></View></Modal>
 }
 const useStyles = (colors: ThemeColors) => StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 20 },
-  card: { backgroundColor: colors.background, borderRadius: radius.xl, maxHeight: '85%', overflow: 'hidden' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', paddingHorizontal: 20 },
+  card: { backgroundColor: colors.background, borderRadius: radius.xl, maxHeight: '100%', overflow: 'hidden' },
   page:{padding:24,paddingTop:24,gap:14},
   row:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'},
   eyebrow:{color:colors.primary,fontSize:10,fontWeight:'700',letterSpacing:1.4, textTransform: 'uppercase'},

@@ -164,7 +164,9 @@ export function SwipeTabShell() {
   const ActiveComponent = TABS[activeIndex].component;
   return (
     <View style={styles.root}>
-      <UpdateBanner />
+      <View style={{ paddingTop: insets.top }}>
+        <UpdateBanner />
+      </View>
       <View style={styles.pager}>
         <ActiveComponent />
       </View>
