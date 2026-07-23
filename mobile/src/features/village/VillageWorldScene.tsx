@@ -601,7 +601,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(47,58,49,0.12)',
   },
-  hitTarget: { position: 'absolute', borderRadius: 32, zIndex: 10, elevation: 10 },
+  // Transparent elevated views can appear as pale rectangles on Android.
+  hitTarget: { position: 'absolute', borderRadius: 32, zIndex: 10 },
   stagePill: {
     position: 'absolute',
     top: 14,

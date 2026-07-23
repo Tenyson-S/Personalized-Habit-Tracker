@@ -3,7 +3,6 @@ import { Platform, View, StyleSheet, Text, Pressable, ActivityIndicator } from '
 import { useResponsive, DESKTOP_WRAPPER_MAX_WIDTH } from './src/hooks/useResponsive';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { BrandSplash } from './src/components/BrandSplash';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAuthStore } from './src/store/authStore';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
@@ -49,7 +48,6 @@ function AppContent() {
   const hydrated = useAuthStore((state) => state.hydrated);
   const userId = useAuthStore((state) => state.userId);
   const initConnectivityListener = useConnectivityStore((state) => state.initConnectivityListener);
-  const [showSplash, setShowSplash] = useState(true);
 
   // Create persister guaranteed to work across WebViews
   const persister = React.useMemo(() => createScopedPersister(userId), [userId]);
@@ -89,7 +87,6 @@ function AppContent() {
       <NavigationContainer documentTitle={{ formatter: () => 'Stealth Track' }}>
         <RootNavigator />
       </NavigationContainer>
-      {showSplash && <BrandSplash onFinished={() => setShowSplash(false)} />}
     </PersistQueryClientProvider>
   );
 }

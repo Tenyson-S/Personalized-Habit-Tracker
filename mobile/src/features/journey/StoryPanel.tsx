@@ -83,24 +83,9 @@ export function StoryPanel() {
     <View style={styles.container}>
       <View style={styles.intro}>
         <Text style={styles.kicker}>YOUR STORY</Text>
-        <Text style={styles.introTitle}>Chapters, joys, and a world that remembers.</Text>
-        <Text style={styles.introBody}>Hearth can reflect what you enjoy and preserve how your world changed. It still does not decide what matters for you.</Text>
+        <Text style={styles.introTitle}>Your life, at a glance.</Text>
+        <Text style={styles.introBody}>Chapters, memories, and village milestones.</Text>
       </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.kicker}>LIFE OUTSIDE THE APP</Text>
-        <Text style={styles.sectionTitle}>Things you said you enjoy</Text>
-      </View>
-
-      {weekly.data ? (
-        <CelebrationCard reflection={weekly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} styles={styles} />
-      ) : (
-        <Card><Text style={styles.muted}>Add something you enjoy below. Hearth will only reflect back choices that came from you.</Text></Card>
-      )}
-
-      {monthly.data ? (
-        <CelebrationCard reflection={monthly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} styles={styles} />
-      ) : null}
 
       {memoryDraft ? (
         <CelebrationMemoryComposer
@@ -122,15 +107,26 @@ export function StoryPanel() {
 
       <ChaptersPanel showIntro={false} />
 
+      {(weekly.data || monthly.data) ? (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.kicker}>GENTLE PROMPTS</Text>
+            <Text style={styles.sectionTitle}>A little joy</Text>
+          </View>
+          {weekly.data ? <CelebrationCard reflection={weekly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} styles={styles} /> : null}
+          {monthly.data ? <CelebrationCard reflection={monthly.data} onChanged={refreshCelebrations} onRemember={setMemoryDraft} styles={styles} /> : null}
+        </>
+      ) : null}
+
       <View style={styles.sectionHeader}>
-        <Text style={styles.kicker}>WORLD HISTORY</Text>
-        <Text style={styles.sectionTitle}>How the village changed through your life</Text>
+        <Text style={styles.kicker}>VILLAGE TIMELINE</Text>
+        <Text style={styles.sectionTitle}>Milestones</Text>
       </View>
       <WorldHistoryTimeline snapshots={history.data ?? []} styles={styles} />
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.kicker}>YOUR REFLECTION CONTROLS</Text>
-        <Text style={styles.sectionTitle}>Keep this mirror current</Text>
+        <Text style={styles.kicker}>YOUR PREFERENCES</Text>
+        <Text style={styles.sectionTitle}>Things you enjoy</Text>
       </View>
       <PreferenceManager preferences={preferences.data ?? []} onChanged={refreshCelebrations} styles={styles} colors={colors} />
     </View>

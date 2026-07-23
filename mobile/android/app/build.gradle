@@ -7,7 +7,7 @@ import org.gradle.api.GradleException
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 // Redirect build output to short path to bypass Windows 260-char MAX_PATH limit in CMake/Ninja
-buildDir = findProperty("st.buildDir") ?: "C:/tmp/hb-app"
+buildDir = findProperty("stBuildDir") ?: findProperty("st.buildDir") ?: new File(projectRoot, "hb-app")
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -105,7 +105,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            buildStagingDirectory = file(findProperty("st.cxxDir") ?: "C:/tmp/hb-cxx")
+            buildStagingDirectory = file(findProperty("stCxxDir") ?: findProperty("st.cxxDir") ?: "C:/tmp/hb-cxx")
         }
     }
 
@@ -114,8 +114,8 @@ android {
         applicationId 'com.tenyson.stealthtrack'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "1.0.4"
+        versionCode 7
+        versionName "1.0.5"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
 

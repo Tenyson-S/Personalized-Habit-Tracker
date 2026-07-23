@@ -123,8 +123,8 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
           {!showCreate ? (
             <View style={styles.emptyChapter}>
               <Text style={styles.emptyEyebrow}>NO ACTIVE CHAPTER</Text>
-              <Text style={styles.emptyTitle}>You do not need a new plan. Just name the season you are in.</Text>
-              <Text style={styles.emptyBody}>Examples: Becoming job ready, First months at work, Returning to health, Building something of my own.</Text>
+              <Text style={styles.emptyTitle}>Name the season you are in.</Text>
+              <Text style={styles.emptyBody}>For example: Job search, better health, or a personal project.</Text>
               <Pressable style={styles.primaryButton} onPress={() => setShowCreate(true)}>
                 <Text style={styles.primaryButtonText}>Begin a chapter</Text>
               </Pressable>
@@ -141,7 +141,7 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
       </View>
       {(memories.data ?? []).length === 0 ? (
         <Card>
-          <Text style={styles.cardBody}>No memories saved yet. Hearth will not decide what is important for you.</Text>
+          <Text style={styles.cardBody}>Save a memory whenever a moment matters to you.</Text>
         </Card>
       ) : (
         (memories.data ?? []).slice(0, 5).map((memory) => <MemoryCard key={memory.id} memory={memory} styles={styles} />)
@@ -152,7 +152,7 @@ export function ChaptersPanel({ showIntro = true }: { showIntro?: boolean }) {
         <Text style={styles.sectionTitle}>Parts of your life that already happened</Text>
       </View>
       {closedChapters.length === 0 ? (
-        <Card><Text style={styles.cardBody}>Closed chapters will become a quiet archive here.</Text></Card>
+        <Card><Text style={styles.cardBody}>Finished chapters will appear here.</Text></Card>
       ) : (
         closedChapters.map((chapter) => <ClosedChapterCard key={chapter.id} chapter={chapter} styles={styles} colors={colors} />)
       )}

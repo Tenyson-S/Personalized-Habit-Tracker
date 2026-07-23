@@ -45,14 +45,20 @@ export function JourneyScreen() {
   const { colors } = useTheme();
   const { isMobile, isTablet, isDesktop } = useResponsive();
   const styles = useStyles(colors, isDesktop, isTablet);
-  const [period, setPeriod] = useState<Period>('weekly');
+  const [period, setPeriod] = useState<Period>('story');
   const journey = useQuery({
     queryKey: ['journey', period],
     queryFn: async () => (await api.get<Journey>(`/journey/${period}/`)).data,
     enabled: period !== 'story' && period !== 'insights',
   });
 
-  const periods: Period[] = ['daily', 'weekly', 'monthly', 'insights', 'story'];
+  const periods: { key: Period; label: string }[] = [
+    { key: 'story', label: 'Story' },
+    { key: 'daily', label: 'Today' },
+    { key: 'weekly', label: 'Week' },
+    { key: 'monthly', label: 'Month' },
+    { key: 'insights', label: 'Insights' },
+  ];
 
   const periodContent = period === 'story' ? <StoryPanel /> : period === 'insights' ? <InsightsPanel /> : journey.isLoading || !journey.data ? <ActivityIndicator /> : (
     <>
@@ -105,19 +111,20 @@ export function JourneyScreen() {
     return (
       <Screen>
         <Text style={styles.eyebrow}>YOUR JOURNEY</Text>
-        <Text style={styles.title}>Only you,{`\n`}compared with you.</Text>
+        <Text style={styles.title}>Your journey</Text>
+        <Text style={styles.subtitle}>Chapters, memories, and progress at a glance.</Text>
         <View style={styles.desktopLayout}>
           {/* Left sidebar: period picker */}
           <View style={[styles.desktopSidebar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={styles.sidebarHeading}>Period</Text>
             {periods.map((item) => (
               <Pressable
-                key={item}
-                onPress={() => setPeriod(item)}
-                style={[styles.sidebarItem, period === item && { backgroundColor: colors.primarySoft }]}
+                key={item.key}
+                onPress={() => setPeriod(item.key)}
+                style={[styles.sidebarItem, period === item.key && { backgroundColor: colors.primarySoft }]}
               >
-                <Text style={[styles.sidebarItemText, { color: period === item ? colors.primary : colors.textMuted }, period === item && styles.sidebarItemActive]}>
-                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                <Text style={[styles.sidebarItemText, { color: period === item.key ? colors.primary : colors.textMuted }, period === item.key && styles.sidebarItemActive]}>
+                  {item.label}
                 </Text>
               </Pressable>
             ))}
@@ -134,11 +141,12 @@ export function JourneyScreen() {
   return (
     <Screen>
       <Text style={styles.eyebrow}>YOUR JOURNEY</Text>
-      <Text style={styles.title}>Only you,{`\n`}compared with you.</Text>
+      <Text style={styles.title}>Your journey</Text>
+      <Text style={styles.subtitle}>Chapters, memories, and progress at a glance.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {periods.map((item) => (
-          <Pressable key={item} onPress={() => setPeriod(item)} style={[styles.tab, period === item && styles.tabActive]}>
-            <Text style={period === item ? styles.tabTextActive : styles.tabText}>{item}</Text>
+          <Pressable key={item.key} onPress={() => setPeriod(item.key)} style={[styles.tab, period === item.key && styles.tabActive]}>
+            <Text style={period === item.key ? styles.tabTextActive : styles.tabText}>{item.label}</Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -151,6 +159,7 @@ export function JourneyScreen() {
 const useStyles = (colors: ThemeColors, isDesktop = false, isTablet = false) => StyleSheet.create({
   eyebrow: { color: colors.primary, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', fontWeight: '600', marginBottom: 2 },
   title: { color: colors.text, fontSize: isDesktop ? 44 : 34, lineHeight: isDesktop ? 50 : 38, letterSpacing: -1, fontWeight: '700', marginBottom: 16 },
+  subtitle: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginTop: -9, marginBottom: 16 },
   tabs: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.md, paddingBottom: 8 },
   tab: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 99, borderWidth: 1, borderColor: colors.border },
   tabActive: { backgroundColor: colors.primarySoft, borderColor: colors.primary },

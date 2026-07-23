@@ -172,8 +172,8 @@ GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
 
 # Direct APK update metadata. The update remains disabled until a valid HTTPS
 # APK URL is configured, preventing deployment from advertising a missing file.
-APP_UPDATE_VERSION_CODE = int(os.getenv("APP_UPDATE_VERSION_CODE", "6"))
-APP_UPDATE_VERSION_NAME = os.getenv("APP_UPDATE_VERSION_NAME", "1.0.4")
+APP_UPDATE_VERSION_CODE = int(os.getenv("APP_UPDATE_VERSION_CODE", "7"))
+APP_UPDATE_VERSION_NAME = os.getenv("APP_UPDATE_VERSION_NAME", "1.0.5")
 APP_UPDATE_APK_URL = os.getenv("APP_UPDATE_APK_URL", "").strip()
 APP_UPDATE_SHA256 = os.getenv("APP_UPDATE_SHA256", "").strip().upper()
 APP_UPDATE_REQUIRED = os.getenv("APP_UPDATE_REQUIRED", "false").lower() == "true"
