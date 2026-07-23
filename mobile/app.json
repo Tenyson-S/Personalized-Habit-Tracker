@@ -2,7 +2,7 @@
   "expo": {
     "name": "Stealth Track",
     "slug": "stealth-tracker",
-    "version": "1.0.5",
+    "version": "1.0.4",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "android": {
